@@ -9,6 +9,7 @@ tags:
 - name: Database
   description: Database operations
 paths:
+  /{db}/authenticate: {}
   /{db}/size:
     get:
       tags:
@@ -36,7 +37,7 @@ paths:
     get:
       tags:
       - Database
-      summary: Export database
+      summary: Return an RDF serialization of the data in the database
       operationId: export
       parameters:
       - $ref: '#/components/parameters/db'
@@ -94,7 +95,7 @@ paths:
     post:
       tags:
       - Database
-      summary: Export database (obfuscated)
+      summary: Return an obfuscated RDF serialization of the data in the database
       operationId: exportObfuscated
       parameters:
       - $ref: '#/components/parameters/db'
@@ -186,96 +187,25 @@ paths:
     get:
       tags:
       - Database
-      summary: Get namespaces
-      description: Retrieve the namespaces stored in the database
       operationId: getNamespaces
       parameters:
       - $ref: '#/components/parameters/db'
       responses:
-        200:
-          description: A JSON object listing the prefixes and IRIs of the stored namespaces
+        default:
+          description: default response
           content:
-            application/json:
-              example:
-                namespaces:
-                - prefix: rdfs
-                  name: http://www.w3.org/2000/01/rdf-schema#
-                - prefix: xsd
-                  name: http://www.w3.org/2001/XMLSchema#
-                - prefix: rdf
-                  name: http://www.w3.org/1999/02/22-rdf-syntax-ns#
-                - prefix: owl
-                  name: http://www.w3.org/2002/07/owl#
-        404:
-          description: Database does not exist
+            '*/*': {}
     post:
       tags:
       - Database
-      summary: Import namespaces
-      description: Add namespaces to the database via a block or blocks of RDF that
-        declares them
       operationId: importNamespaces
       parameters:
       - $ref: '#/components/parameters/db'
-      requestBody:
-        content:
-          text/turtle:
-            example: "@prefix : <urn:example:> .\n@prefix owl: <http://www.w3.org/2002/07/owl#>\
-              \ .\n@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .\n\
-              @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n@prefix stardog:\
-              \ <tag:stardog:api:> .\n@prefix xsd: <http://www.w3.org/2001/XMLSchema#>\
-              \ .\n\n<urn:example:Entity1> a <urn:example:Entity> ;\n\t<urn:example:hasProp>\
-              \ 42 ."
-          application/trig:
-            example: "@prefix : <urn:example:> .\n@prefix owl: <http://www.w3.org/2002/07/owl#>\
-              \ .\n@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .\n\
-              @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n@prefix stardog:\
-              \ <tag:stardog:api:> .\n@prefix xsd: <http://www.w3.org/2001/XMLSchema#>\
-              \ .\n\n{ \t<urn:example:Entity1> a <urn:example:Entity> ;\n\t\t <urn:example:hasProp>\
-              \ 42 .\n}"
-          application/rdf+xml:
-            example: "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<rdf:RDF\n\txmlns=\"\
-              http://api.stardog.com/\"\n\txmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"\
-              \n\txmlns:owl=\"http://www.w3.org/2002/07/owl#\"\n\txmlns:rdfs=\"http://www.w3.org/2000/01/rdf-schema#\"\
-              \n\txmlns:stardog=\"tag:stardog:api:\"\n\txmlns:xsd=\"http://www.w3.org/2001/XMLSchema#\"\
-              >\n\n<rdf:Description rdf:about=\"urn:example:Entity1\">\n\t<rdf:type\
-              \ rdf:resource=\"urn:example:Entity\"/>\n\t<hasProp xmlns=\"urn:example:\"\
-              \ rdf:datatype=\"http://www.w3.org/2001/XMLSchema#integer\">42</hasProp>\n\
-              </rdf:Description>\n\n</rdf:RDF>"
-          application/n-triples:
-            example: |-
-              <urn:example:Entity1> a <urn:example:Entity> .
-              <urn:example:Entity1> <urn:example:hasProp> 42 .
-          application/n-quads:
-            example: |-
-              <urn:context> <urn:example:Entity1> a <urn:example:Entity> .
-              <urn:context> <urn:example:Entity1> <urn:example:hasProp> 42 .
-          application/ld+json:
-            example:
-            - '@id': urn:example:Entity1
-              '@type':
-              - urn:example:Entity
-              urn:example:hasProp:
-              - '@type': http://www.w3.org/2001/XMLSchema#integer
-                '@value': "42"
-        required: true
       responses:
-        200:
-          description: A JSON object listing the prefixes and IRIs of the stored namespaces
+        default:
+          description: default response
           content:
-            application/json:
-              example:
-                namespaces:
-                - prefix: rdfs
-                  name: http://www.w3.org/2000/01/rdf-schema#
-                - prefix: xsd
-                  name: http://www.w3.org/2001/XMLSchema#
-                - prefix: rdf
-                  name: http://www.w3.org/1999/02/22-rdf-syntax-ns#
-                - prefix: owl
-                  name: http://www.w3.org/2002/07/owl#
-        404:
-          description: Database does not exist
+            '*/*': {}
 components:
   parameters:
     db:
