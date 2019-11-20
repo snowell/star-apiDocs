@@ -1,0 +1,218 @@
+openapi: 3.0.1
+info:
+  title: TITLE
+  description: Description
+  contact:
+    email: stephen@stardog.com
+  version: 7.1.0
+tags:
+- name: Database
+  description: Database operations
+paths:
+  /{db}/authenticate: {}
+  /{db}/size:
+    get:
+      tags:
+      - Database
+      summary: Get DB Size
+      operationId: size
+      parameters:
+      - $ref: '#/components/parameters/db'
+      - name: exact
+        in: query
+        description: Whether to request that the database size be exact instead of
+          approximate
+        schema:
+          type: boolean
+      responses:
+        200:
+          description: The size (in triples) of the database
+          content:
+            text/plain:
+              schema:
+                type: integer
+        404:
+          description: Database does not exist
+  /{db}/export:
+    get:
+      tags:
+      - Database
+      summary: Return an RDF serialization of the data in the database
+      operationId: export
+      parameters:
+      - $ref: '#/components/parameters/db'
+      - name: obf
+        in: query
+        description: Path to an obfuscation configuration file, or DEFAULT
+        schema:
+          type: string
+      responses:
+        200:
+          description: RDF serialization of the database
+          content:
+            text/turtle:
+              example: "@prefix : <urn:example:> .\n@prefix owl: <http://www.w3.org/2002/07/owl#>\
+                \ .\n@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .\n\
+                @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n@prefix stardog:\
+                \ <tag:stardog:api:> .\n@prefix xsd: <http://www.w3.org/2001/XMLSchema#>\
+                \ .\n\n<urn:example:Entity1> a <urn:example:Entity> ;\n\t<urn:example:hasProp>\
+                \ 42 ."
+            application/trig:
+              example: "@prefix : <urn:example:> .\n@prefix owl: <http://www.w3.org/2002/07/owl#>\
+                \ .\n@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .\n\
+                @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n@prefix stardog:\
+                \ <tag:stardog:api:> .\n@prefix xsd: <http://www.w3.org/2001/XMLSchema#>\
+                \ .\n\n{ \t<urn:example:Entity1> a <urn:example:Entity> ;\n\t\t <urn:example:hasProp>\
+                \ 42 .\n}"
+            application/rdf+xml:
+              example: "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<rdf:RDF\n\txmlns=\"\
+                http://api.stardog.com/\"\n\txmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"\
+                \n\txmlns:owl=\"http://www.w3.org/2002/07/owl#\"\n\txmlns:rdfs=\"\
+                http://www.w3.org/2000/01/rdf-schema#\"\n\txmlns:stardog=\"tag:stardog:api:\"\
+                \n\txmlns:xsd=\"http://www.w3.org/2001/XMLSchema#\">\n\n<rdf:Description\
+                \ rdf:about=\"urn:example:Entity1\">\n\t<rdf:type rdf:resource=\"\
+                urn:example:Entity\"/>\n\t<hasProp xmlns=\"urn:example:\" rdf:datatype=\"\
+                http://www.w3.org/2001/XMLSchema#integer\">42</hasProp>\n</rdf:Description>\n\
+                \n</rdf:RDF>"
+            application/n-triples:
+              example: |-
+                <urn:example:Entity1> a <urn:example:Entity> .
+                <urn:example:Entity1> <urn:example:hasProp> 42 .
+            application/n-quads:
+              example: |-
+                <urn:context> <urn:example:Entity1> a <urn:example:Entity> .
+                <urn:context> <urn:example:Entity1> <urn:example:hasProp> 42 .
+            application/ld+json:
+              example:
+              - '@id': urn:example:Entity1
+                '@type':
+                - urn:example:Entity
+                urn:example:hasProp:
+                - '@type': http://www.w3.org/2001/XMLSchema#integer
+                  '@value': "42"
+        404:
+          description: Database does not exist
+    post:
+      tags:
+      - Database
+      summary: Return an obfuscated RDF serialization of the data in the database
+      operationId: exportObfuscated
+      parameters:
+      - $ref: '#/components/parameters/db'
+      requestBody:
+        description: Obfuscation configuration
+        content:
+          text/turtle:
+            example: |-
+              @prefix obf: <tag:stardog:api:obf:> .
+
+              [] a obf:Obfuscation ;
+                  obf:digest "SHA-256" ;
+                  obf:include [
+                      obf:position obf:any ;
+                      obf:pattern ".*"
+                  ] ;
+
+                  obf:exclude [
+                      obf:position obf:any ;
+                      obf:namespace "rdf"
+                  ] ;
+                  obf:exclude [
+                      obf:position obf:any ;
+                      obf:namespace "owl"
+                  ] ;
+                  obf:exclude [
+                      obf:position obf:predicate ;
+                      obf:namespace "rdfs"
+                  ] ;
+        required: true
+      responses:
+        200:
+          description: Obfuscated RDF serialization of the database
+          content:
+            text/turtle:
+              example: |-
+                @prefix : <http://api.stardog.com/> .
+                @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+                @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+                @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+                @prefix owl: <http://www.w3.org/2002/07/owl#> .
+                @prefix stardog: <tag:stardog:api:> .
+
+                <tag:stardog:api:obf:b55b5d6354699b339940e8be603eb75c220e3110eb1d4143ffd6d3abd5679154> a <tag:stardog:api:obf:9f8e6dca5e5e240793e4ebf3c3a8b23f3654018b38457dbb58a6ba802a120a42> ;
+                   <tag:stardog:api:obf:d00c88d06fd10fa223ca9493ab57efa04fdc9b245cb86c22b8cf6de8f99135f7> "c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f2" .
+            application/trig:
+              example: |-
+                @prefix : <http://api.stardog.com/> .
+                @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+                @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+                @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+                @prefix owl: <http://www.w3.org/2002/07/owl#> .
+                @prefix stardog: <tag:stardog:api:> .
+
+                {
+                    <tag:stardog:api:obf:b55b5d6354699b339940e8be603eb75c220e3110eb1d4143ffd6d3abd5679154> a <tag:stardog:api:obf:9f8e6dca5e5e240793e4ebf3c3a8b23f3654018b38457dbb58a6ba802a120a42> ;
+                      <tag:stardog:api:obf:d00c88d06fd10fa223ca9493ab57efa04fdc9b245cb86c22b8cf6de8f99135f7> "c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f2" .
+                }
+            application/rdf+xml:
+              example: "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<rdf:RDF\n\txmlns=\"\
+                http://api.stardog.com/\"\n\txmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"\
+                \n\txmlns:owl=\"http://www.w3.org/2002/07/owl#\"\n\txmlns:rdfs=\"\
+                http://www.w3.org/2000/01/rdf-schema#\"\n\txmlns:stardog=\"tag:stardog:api:\"\
+                \n\txmlns:xsd=\"http://www.w3.org/2001/XMLSchema#\">\n\n<rdf:Description\
+                \ rdf:about=\"tag:stardog:api:obf:b55b5d6354699b339940e8be603eb75c220e3110eb1d4143ffd6d3abd5679154\"\
+                >\n\t<rdf:type rdf:resource=\"tag:stardog:api:obf:9f8e6dca5e5e240793e4ebf3c3a8b23f3654018b38457dbb58a6ba802a120a42\"\
+                />\n\t<d00c88d06fd10fa223ca9493ab57efa04fdc9b245cb86c22b8cf6de8f99135f7\
+                \ xmlns=\"tag:stardog:api:obf:\" rdf:datatype=\"http://www.w3.org/2001/XMLSchema#string\"\
+                >c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f2</d00c88d06fd10fa223ca9493ab57efa04fdc9b245cb86c22b8cf6de8f99135f7>\n\
+                </rdf:Description>\n\n</rdf:RDF>"
+            application/n-triples:
+              example: |-
+                <tag:stardog:api:obf:b55b5d6354699b339940e8be603eb75c220e3110eb1d4143ffd6d3abd5679154> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <tag:stardog:api:obf:9f8e6dca5e5e240793e4ebf3c3a8b23f3654018b38457dbb58a6ba802a120a42> .
+                <tag:stardog:api:obf:b55b5d6354699b339940e8be603eb75c220e3110eb1d4143ffd6d3abd5679154> <tag:stardog:api:obf:d00c88d06fd10fa223ca9493ab57efa04fdc9b245cb86c22b8cf6de8f99135f7> "c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f2" .
+            application/n-quads:
+              example: |-
+                <tag:stardog:api:obf:e603eb75c220e3110eb1d4143ffd6d3abd5679154b55b5d6354699b339940e8b> <tag:stardog:api:obf:b55b5d6354699b339940e8be603eb75c220e3110eb1d4143ffd6d3abd5679154> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <tag:stardog:api:obf:9f8e6dca5e5e240793e4ebf3c3a8b23f3654018b38457dbb58a6ba802a120a42> .
+                <tag:stardog:api:obf:e603eb75c220e3110eb1d4143ffd6d3abd5679154b55b5d6354699b339940e8b> <tag:stardog:api:obf:b55b5d6354699b339940e8be603eb75c220e3110eb1d4143ffd6d3abd5679154> <tag:stardog:api:obf:d00c88d06fd10fa223ca9493ab57efa04fdc9b245cb86c22b8cf6de8f99135f7> "c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f2" .
+            application/ld+json:
+              example:
+              - '@id': tag:stardog:api:obf:b55b5d6354699b339940e8be603eb75c220e3110eb1d4143ffd6d3abd5679154
+                '@type':
+                - tag:stardog:api:obf:9f8e6dca5e5e240793e4ebf3c3a8b23f3654018b38457dbb58a6ba802a120a42
+                tag:stardog:api:obf:d00c88d06fd10fa223ca9493ab57efa04fdc9b245cb86c22b8cf6de8f99135f7:
+                - '@value': c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f2
+        404:
+          description: Database does not exist
+  /{db}/namespaces:
+    get:
+      tags:
+      - Database
+      operationId: getNamespaces
+      parameters:
+      - $ref: '#/components/parameters/db'
+      responses:
+        default:
+          description: default response
+          content:
+            '*/*': {}
+    post:
+      tags:
+      - Database
+      operationId: importNamespaces
+      parameters:
+      - $ref: '#/components/parameters/db'
+      responses:
+        default:
+          description: default response
+          content:
+            '*/*': {}
+components:
+  parameters:
+    db:
+      name: db
+      in: path
+      description: Database name
+      required: true
+      schema:
+        type: string
+      example: myDb
