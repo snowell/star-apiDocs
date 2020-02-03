@@ -4,140 +4,62 @@ info:
   description: Description
   contact:
     email: stephen@stardog.com
-  version: 7.1.2-SNAPSHOT-20200130
+  version: 7.1.2-SNAPSHOT-20200113
 paths:
-  /{db}/transaction/begin:
+  '{txid}/clear':
     post:
       tags:
       - Transactions
-      summary: Begin a transaction
+      operationId: clear
+      parameters:
+      - $ref: '#/components/parameters/txid'
+      responses:
+        default:
+          description: default response
+          content:
+            '*/*': {}
+  transaction/begin:
+    post:
+      tags:
+      - Transactions
       operationId: begin
-      parameters:
-      - $ref: '#/components/parameters/db'
       responses:
-        200:
+        default:
+          description: default response
           content:
-            text/plain:
-              example: 067e6162-3b6f-4ae2-a171-2470b63dff00
-        404:
-          description: Database Not Found
-      x-sort-order:
-        group: "1"
-        order: "1"
-  /{db}/transaction/begin/{txid}:
+            '*/*': {}
+  '{txid}/remove':
     post:
       tags:
       - Transactions
-      summary: Begin a transaction with specified txid
-      operationId: beginTx
-      parameters:
-      - $ref: '#/components/parameters/db'
-      - $ref: '#/components/parameters/txid'
-      responses:
-        200:
-          description: Transaction begun
-          content:
-            text/plain:
-              example: 067e6162-3b6f-4ae2-a171-2470b63dff00
-        404:
-          description: Database Not Found
-      x-sort-order:
-        group: "1"
-        order: "2"
-  /{db}/transaction/commit/{txid}:
-    post:
-      tags:
-      - Transactions
-      summary: Commit a transaction
-      operationId: commit
-      parameters:
-      - $ref: '#/components/parameters/db'
-      - $ref: '#/components/parameters/txid'
-      responses:
-        200:
-          description: Commit successful
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/COMMIT_RESULT'
-        404:
-          $ref: '#/components/responses/DB_TX_404'
-      x-sort-order:
-        group: "1"
-        order: "3"
-  /{db}/transaction/rollback/{txid}:
-    post:
-      tags:
-      - Transactions
-      summary: Rollback a transaction
-      operationId: rollback
-      parameters:
-      - $ref: '#/components/parameters/db'
-      - $ref: '#/components/parameters/txid'
-      responses:
-        200:
-          $ref: '#/components/responses/EMPTY_SUCCESS'
-        404:
-          $ref: '#/components/responses/DB_TX_404'
-      x-sort-order:
-        group: "1"
-        order: "4"
-  /{db}/{txid}/remove:
-    post:
-      tags:
-      - Transactions
-      summary: Remove data within a transaction
       operationId: remove
       parameters:
-      - $ref: '#/components/parameters/db'
       - $ref: '#/components/parameters/txid'
-      - $ref: '#/components/parameters/graph-uri'
-      requestBody:
-        content:
-          text/turtle:
-            examples:
-              GENERIC_TURTLE:
-                description: GENERIC_TURTLE
-                $ref: '#/components/examples/GENERIC_TURTLE'
-          application/trig:
-            examples:
-              GENERIC_TRIG:
-                description: GENERIC_TRIG
-                $ref: '#/components/examples/GENERIC_TRIG'
-          application/rdf+xml:
-            examples:
-              GENERIC_RDFXML:
-                description: GENERIC_RDFXML
-                $ref: '#/components/examples/GENERIC_RDFXML'
-          application/n-triples:
-            examples:
-              GENERIC_NTRIPLES:
-                description: GENERIC_NTRIPLES
-                $ref: '#/components/examples/GENERIC_NTRIPLES'
-          application/n-quads:
-            examples:
-              GENERIC_NQUADS:
-                description: GENERIC_NQUADS
-                $ref: '#/components/examples/GENERIC_NQUADS'
-          application/ld+json:
-            schema:
-              $ref: '#/components/schemas/GENERIC_JSONLD'
-        required: true
       responses:
-        200:
-          $ref: '#/components/responses/EMPTY_SUCCESS'
-        404:
-          $ref: '#/components/responses/DB_TX_404'
-  /{db}/{txid}/add:
+        default:
+          description: default response
+          content:
+            '*/*': {}
+  transaction/commit/{txid}:
+    post:
+      tags:
+      - Transactions
+      operationId: commit
+      parameters:
+      - $ref: '#/components/parameters/txid'
+      responses:
+        default:
+          description: default response
+          content:
+            '*/*': {}
+  '{txid}/add':
     post:
       tags:
       - Transactions
       summary: Add data within a transaction
       operationId: add
       parameters:
-      - $ref: '#/components/parameters/db'
       - $ref: '#/components/parameters/txid'
-      - $ref: '#/components/parameters/graph-uri'
       requestBody:
         content:
           text/turtle:
@@ -170,60 +92,53 @@ paths:
               $ref: '#/components/schemas/GENERIC_JSONLD'
         required: true
       responses:
-        200:
-          $ref: '#/components/responses/EMPTY_SUCCESS'
         404:
           $ref: '#/components/responses/DB_TX_404'
-  /{db}/transaction:
-    get:
-      tags:
-      - Transactions
-      summary: List all open transactions on a database
-      operationId: listTransactions
-      parameters:
-      - $ref: '#/components/parameters/db'
-      responses:
-        200:
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/TRANSACTION'
-        404:
-          description: Database Not Found
-  /{db}/{txid}/clear:
+  transaction/rollback/{txid}:
     post:
       tags:
       - Transactions
-      summary: Clear database within a transaction
-      operationId: clear
+      operationId: rollback
       parameters:
-      - $ref: '#/components/parameters/db'
       - $ref: '#/components/parameters/txid'
-      - $ref: '#/components/parameters/graph-uri'
       responses:
-        200:
-          $ref: '#/components/responses/EMPTY_SUCCESS'
-        404:
-          $ref: '#/components/responses/DB_TX_404'
-  /admin/databases/backup_all:
+        default:
+          description: default response
+          content:
+            '*/*': {}
+  transaction/begin/{txid}:
     put:
       tags:
-      - Database
-      summary: Backup all databases
-      description: Create a backup of all databases on the server
-      operationId: backupAll
+      - Transactions
+      operationId: beginTx
       parameters:
-      - name: to
-        in: query
-        description: File location on the server to which to save the backups (defaults
-          to $STARDOG_HOME/.backup)
-        schema:
-          type: string
+      - $ref: '#/components/parameters/txid'
       responses:
-        200:
-          $ref: '#/components/responses/GENERIC_RESPONSE_MESSAGE'
+        default:
+          description: default response
+          content:
+            '*/*': {}
+    post:
+      tags:
+      - Transactions
+      operationId: beginTx
+      parameters:
+      - $ref: '#/components/parameters/txid'
+      responses:
+        default:
+          description: default response
+          content:
+            '*/*': {}
+  transaction:
+    get:
+      tags:
+      - Transactions
+      operationId: listTransactions
+      responses:
+        default:
+          description: default response
+          content:
+            '*/*': {}
   /admin/databases:
     get:
       tags:
@@ -265,28 +180,6 @@ paths:
           description: default response
           content:
             '*/*': {}
-  /admin/databases/{db}/online:
-    put:
-      tags:
-      - Database
-      summary: Online database
-      description: Bring a database online
-      operationId: online
-      parameters:
-      - $ref: '#/components/parameters/db'
-      requestBody:
-        description: Configuration parameters
-        content:
-          application/json:
-            example:
-              timeout: 5000
-      responses:
-        200:
-          $ref: '#/components/responses/GENERIC_RESPONSE_MESSAGE'
-        400:
-          description: Invalid or malformed request body
-        404:
-          description: Database does not exist
   /admin/databases/{db}/options:
     get:
       tags:
@@ -351,47 +244,45 @@ paths:
           $ref: '#/components/responses/GENERIC_RESPONSE_MESSAGE'
         404:
           description: Database does not exist
-  /admin/config_properties:
-    get:
-      tags:
-      - Database
-      summary: Get all metadata properties
-      description: Get information on all database metadata properties, including
-        description and example values
-      operationId: getAllMetaProperties
-      responses:
-        200:
-          description: JSON object detailing all metadata options
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JSON_CONFIG_PROPERTIES'
-  /admin/databases/{db}:
-    delete:
-      tags:
-      - Database
-      summary: Drop database
-      description: Delete the datbase
-      operationId: dropDatabase
-      parameters:
-      - $ref: '#/components/parameters/db'
-      responses:
-        200:
-          $ref: '#/components/responses/GENERIC_RESPONSE_MESSAGE'
-        404:
-          description: Database does not exist
-  /admin/restore_all:
+  /admin/restore:
     put:
       tags:
       - Database
-      summary: Restore multiple databases
-      description: Restore multiple databases from backup
-      operationId: restoreAll
+      summary: Restore database
+      description: Restore a database from backup
+      operationId: restore
       parameters:
       - name: from
         in: query
-        description: The location on the server of the backups
+        description: The location on the server of the backup
         required: true
+        schema:
+          type: string
+      - name: force
+        in: query
+        description: Whether or not to overwrite an existing database with this backup
+        schema:
+          type: boolean
+      - name: name
+        in: query
+        description: The name of the restored database, if different
+        schema:
+          type: string
+      responses:
+        200:
+          $ref: '#/components/responses/GENERIC_RESPONSE_MESSAGE'
+  /admin/databases/backup_all:
+    put:
+      tags:
+      - Database
+      summary: Backup all databases
+      description: Create a backup of all databases on the server
+      operationId: backupAll
+      parameters:
+      - name: to
+        in: query
+        description: File location on the server to which to save the backups (defaults
+          to $STARDOG_HOME/.backup)
         schema:
           type: string
       responses:
@@ -417,26 +308,35 @@ paths:
           $ref: '#/components/responses/GENERIC_RESPONSE_MESSAGE'
         404:
           description: Database does not exist
-  /admin/databases/{db}/optimize:
-    put:
+  /admin/databases/{db}:
+    delete:
       tags:
       - Database
-      summary: Optimize database
-      description: Optimize the index of a database
-      operationId: optimize
+      summary: Drop database
+      description: Delete the datbase
+      operationId: dropDatabase
       parameters:
       - $ref: '#/components/parameters/db'
-      requestBody:
-        description: Configuration parameters
-        content:
-          application/json: {}
       responses:
         200:
           $ref: '#/components/responses/GENERIC_RESPONSE_MESSAGE'
-        400:
-          description: Invalid or malformed request body
         404:
           description: Database does not exist
+  /admin/config_properties:
+    get:
+      tags:
+      - Database
+      summary: Get all metadata properties
+      description: Get information on all database metadata properties, including
+        description and example values
+      operationId: getAllMetaProperties
+      responses:
+        200:
+          description: JSON object detailing all metadata options
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JSON_CONFIG_PROPERTIES'
   /admin/databases/{db}/offline:
     put:
       tags:
@@ -473,33 +373,88 @@ paths:
           $ref: '#/components/responses/GENERIC_RESPONSE_MESSAGE'
         404:
           description: Database does not exist
-  /admin/restore:
+  /admin/databases/{db}/online:
     put:
       tags:
       - Database
-      summary: Restore database
-      description: Restore a database from backup
-      operationId: restore
+      summary: Online database
+      description: Bring a database online
+      operationId: online
+      parameters:
+      - $ref: '#/components/parameters/db'
+      requestBody:
+        description: Configuration parameters
+        content:
+          application/json:
+            example:
+              timeout: 5000
+      responses:
+        200:
+          $ref: '#/components/responses/GENERIC_RESPONSE_MESSAGE'
+        400:
+          description: Invalid or malformed request body
+        404:
+          description: Database does not exist
+  /admin/databases/{db}/optimize:
+    put:
+      tags:
+      - Database
+      summary: Optimize database
+      description: Optimize the index of a database
+      operationId: optimize
+      parameters:
+      - $ref: '#/components/parameters/db'
+      requestBody:
+        description: Configuration parameters
+        content:
+          application/json: {}
+      responses:
+        200:
+          $ref: '#/components/responses/GENERIC_RESPONSE_MESSAGE'
+        400:
+          description: Invalid or malformed request body
+        404:
+          description: Database does not exist
+  /admin/restore_all:
+    put:
+      tags:
+      - Database
+      summary: Restore multiple databases
+      description: Restore multiple databases from backup
+      operationId: restoreAll
       parameters:
       - name: from
         in: query
-        description: The location on the server of the backup
+        description: The location on the server of the backups
         required: true
-        schema:
-          type: string
-      - name: force
-        in: query
-        description: Whether or not to overwrite an existing database with this backup
-        schema:
-          type: boolean
-      - name: name
-        in: query
-        description: The name of the restored database, if different
         schema:
           type: string
       responses:
         200:
           $ref: '#/components/responses/GENERIC_RESPONSE_MESSAGE'
+  /{db}/size:
+    get:
+      tags:
+      - Database
+      summary: Get DB Size
+      operationId: size
+      parameters:
+      - $ref: '#/components/parameters/db'
+      - name: exact
+        in: query
+        description: Whether to request that the database size be exact instead of
+          approximate
+        schema:
+          type: boolean
+      responses:
+        200:
+          description: The size (in triples) of the database
+          content:
+            text/plain:
+              schema:
+                type: integer
+        404:
+          description: Database does not exist
   /{db}/export:
     get:
       tags:
@@ -682,29 +637,6 @@ paths:
                 $ref: '#/components/schemas/JSON_NAMESPACES'
         404:
           description: Database does not exist
-  /{db}/size:
-    get:
-      tags:
-      - Database
-      summary: Get DB Size
-      operationId: size
-      parameters:
-      - $ref: '#/components/parameters/db'
-      - name: exact
-        in: query
-        description: Whether to request that the database size be exact instead of
-          approximate
-        schema:
-          type: boolean
-      responses:
-        200:
-          description: The size (in triples) of the database
-          content:
-            text/plain:
-              schema:
-                type: integer
-        404:
-          description: Database does not exist
 components:
   schemas:
     GENERIC_RESPONSE_MESSAGE:
@@ -741,6 +673,8 @@ components:
           type: string
           example: tag:stardog:api:obf:9f8e6dca5e5e240793e4ebf3c3a8b23f3654018b38457dbb58a6ba802a120a42
         tag:stardog:api:obf:223ca9493ab57efa04fdc9b245cb86c22d00c88cf6de8f99135f78d06fd10fab:
+          required:
+          - '@id'
           type: array
           items:
             properties:
@@ -769,50 +703,52 @@ components:
                 example: http://www.w3.org/2000/01/rdf-schema#
     JSON_CONFIG_PROPERTIES:
       minProperties: 1
-      additionalProperties:
-        properties:
-          name:
-            type: string
-            example: reasoning.sameas
-          type:
-            type: string
-            example: Enum
-          mutable:
-            type: boolean
-          mutableWhileOnline:
-            type: boolean
-            description: Can be changed while the database is online
-          category:
-            type: string
-            example: Reasoning
-          label:
-            type: string
-            example: SameAs
-          description:
-            type: string
-            example: Option to enable owl:sameAs reasoning. When this option is set
-              to ON reflexive, symmetric, and transitive closure of the owl:sameAs
-              triples in the database is computed. When it is set to FULL, owl:sameAs
-              inferences are computed based on the schema axioms such as functional
-              properties
-          possibleValues:
-            type: array
-            example:
-            - OFF
-            - ON
-            - FULL
-            items:
+      type: object
+      properties:
+        option.name.here:
+          properties:
+            name:
               type: string
-          defaultValue:
-            type: string
-            example: OFF
+              example: reasoning.sameas
+            type:
+              type: string
+              example: Enum
+            mutable:
+              type: boolean
+            mutableWhileOnline:
+              type: boolean
+              description: Can be changed while the database is online
+            category:
+              type: string
+              example: Reasoning
+            label:
+              type: string
+              example: SameAs
+            description:
+              type: string
+              example: Option to enable owl:sameAs reasoning. When this option is
+                set to ON reflexive, symmetric, and transitive closure of the owl:sameAs
+                triples in the database is computed. When it is set to FULL, owl:sameAs
+                inferences are computed based on the schema axioms such as functional
+                properties
+            possibleValues:
+              type: array
+              example:
+              - OFF
+              - ON
+              - FULL
+              items:
+                type: string
+            defaultValue:
+              type: string
+              example: OFF
     DB_OFFLINE_ONLINE:
       required:
       - timeout
       properties:
         timeout:
           type: integer
-          description: timeout in ms
+          example: 5000
     DB_CREATE:
       required:
       - root
@@ -822,6 +758,7 @@ components:
           - dbname
           - options
           - files
+          type: object
           properties:
             dbname:
               type: string
@@ -833,6 +770,7 @@ components:
               items:
                 required:
                 - filename
+                type: object
                 properties:
                   filename:
                     type: string
@@ -845,55 +783,22 @@ components:
       additionalProperties:
         type: string
         format: binary
-    COMMIT_RESULT:
-      required:
-      - added
-      - removed
-      properties:
-        added:
-          type: integer
-          description: Approximate number of triples added
-          example: 42
-        removed:
-          type: integer
-          description: Approximate number of triples removed
-          example: 29
-    TRANSACTION:
-      required:
-      - id
-      - db
-      - user
-      - startTime
-      properties:
-        id:
-          type: string
-          format: UUID
-          example: 4ea1ebac-48f0-459c-a9a7-6cad7189403d
-        db:
-          type: string
-          example: myDb
-        user:
-          type: string
-          example: admin
-        startTime:
-          type: long
-          description: Unix timestamp when transaction started
-          example: 1579812754096
   responses:
-    EMPTY_SUCCESS:
-      description: Operation successful
     GENERIC_RESPONSE_MESSAGE:
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/GENERIC_RESPONSE_MESSAGE'
     DB_TX_404:
-      description: Database/Transaction Not Found (See SD-Error-Code)
       headers:
         SD-Error-Code:
-          description: "5 - Transaction Not Found  \n6 - Database Not Found"
           schema:
-            type: integer
+            type: string
+          examples:
+            5:
+              value: Transaction not found
+            6:
+              value: Database not found
   parameters:
     db:
       name: db
@@ -910,17 +815,7 @@ components:
       required: true
       schema:
         type: string
-        format: UUID
-        example: 4ea1ebac-48f0-459c-a9a7-6cad7189403d
-    graph-uri:
-      name: graph-uri
-      in: query
-      description: Named Graph / Context
-      required: false
-      schema:
-        type: string
-        format: URI
-      example: https://stardog.com/graphs/myGraph
+      example: bea5faf1-f1ab-4481-b9d3-5d2f2aadd2a5
   examples:
     GENERIC_TURTLE:
       value: "@prefix : <urn:example:> .\n@prefix owl: <http://www.w3.org/2002/07/owl#>\

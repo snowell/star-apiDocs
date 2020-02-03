@@ -2,6 +2,7 @@
   "name": "stardog",
   "version": "1.0.0",
   "dependencies": {
+    "redoc": "^2.0.0-rc.20",
     "swagger-repo": "^2.0.0-rc.15"
   },
   "private": true,
