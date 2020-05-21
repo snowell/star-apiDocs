@@ -1,1150 +1,2535 @@
 {
-  "openapi" : "3.0.1",
-  "info" : {
-    "title" : "Stardog HTTP API",
-    "description" : "Description",
-    "contact" : {
-      "email" : "stephen@stardog.com"
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Stardog HTTP API",
+    "description": "Description",
+    "contact": {
+      "email": "stephen@stardog.com"
     },
-    "version" : "7.1.2-SNAPSHOT-20200113"
+    "version": "7.3.0-SNAPSHOT-20200413"
   },
-  "paths" : {
-    "{txid}/clear" : {
-      "post" : {
-        "tags" : [ "Transactions" ],
-        "operationId" : "clear",
-        "parameters" : [ {
-          "$ref" : "#/components/parameters/txid"
-        } ],
-        "responses" : {
-          "default" : {
-            "description" : "default response",
-            "content" : {
-              "*/*" : { }
-            }
+  "tags": [
+    {
+      "name": "Server Admin",
+      "description": "Server administration operations. May require superuser permissions"
+    },
+    {
+      "name": "Database",
+      "description": "Database operations"
+    },
+    {
+      "name": "Transactions",
+      "description": "Transactional operations"
+    },
+    {
+      "name": "Graph Store Protocol",
+      "description": "Operations on named graphs as detailed in https://www.w3.org/TR/sparql11-http-rdf-update/"
+    },
+    {
+      "name": "SPARQL",
+      "description": "SPARQL Queries"
+    }
+  ],
+  "paths": {
+    "/admin/shutdown": {
+      "post": {
+        "tags": [
+          "Server Admin"
+        ],
+        "summary": "Shutdown server",
+        "operationId": "shutdown",
+        "responses": {
+          "200": {
+            "description": "Shutdown request received"
+          },
+          "405": {
+            "description": "Remote shutdowns not allowed"
           }
         }
       }
     },
-    "transaction/begin" : {
-      "post" : {
-        "tags" : [ "Transactions" ],
-        "operationId" : "begin",
-        "responses" : {
-          "default" : {
-            "description" : "default response",
-            "content" : {
-              "*/*" : { }
-            }
+    "/admin/alive": {
+      "get": {
+        "tags": [
+          "Server Admin"
+        ],
+        "summary": "Server aliveness check",
+        "description": "Determine whether the server is running",
+        "operationId": "aliveCheck",
+        "responses": {
+          "200": {
+            "description": "Server is running"
           }
         }
       }
     },
-    "{txid}/remove" : {
-      "post" : {
-        "tags" : [ "Transactions" ],
-        "operationId" : "remove",
-        "parameters" : [ {
-          "$ref" : "#/components/parameters/txid"
-        } ],
-        "responses" : {
-          "default" : {
-            "description" : "default response",
-            "content" : {
-              "*/*" : { }
-            }
+    "/admin/healthcheck": {
+      "get": {
+        "tags": [
+          "Server Admin"
+        ],
+        "summary": "Server health check",
+        "description": "Determine whether the server is running and able to accept traffic",
+        "operationId": "healthCheck",
+        "responses": {
+          "200": {
+            "description": "Server is running and healthy"
+          },
+          "503": {
+            "description": "Server is unavailable"
           }
         }
       }
     },
-    "{txid}/add" : {
-      "post" : {
-        "tags" : [ "Transactions" ],
-        "summary" : "Add data within a transaction",
-        "operationId" : "add",
-        "parameters" : [ {
-          "$ref" : "#/components/parameters/txid"
-        } ],
-        "requestBody" : {
-          "content" : {
-            "text/turtle" : {
-              "examples" : {
-                "GENERIC_TURTLE" : {
-                  "description" : "GENERIC_TURTLE",
-                  "$ref" : "#/components/examples/GENERIC_TURTLE"
+    "/{db}/namespaces": {
+      "get": {
+        "tags": [
+          "Database"
+        ],
+        "summary": "Get namespaces",
+        "description": "Retrieve the namespaces stored in the database",
+        "operationId": "getNamespaces",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/db"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A JSON object listing the prefixes and IRIs of the stored namespaces",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JSON_NAMESPACES"
                 }
-              }
-            },
-            "application/trig" : {
-              "examples" : {
-                "GENERIC_TRIG" : {
-                  "description" : "GENERIC_TRIG",
-                  "$ref" : "#/components/examples/GENERIC_TRIG"
-                }
-              }
-            },
-            "application/rdf+xml" : {
-              "examples" : {
-                "GENERIC_RDFXML" : {
-                  "description" : "GENERIC_RDFXML",
-                  "$ref" : "#/components/examples/GENERIC_RDFXML"
-                }
-              }
-            },
-            "application/n-triples" : {
-              "examples" : {
-                "GENERIC_NTRIPLES" : {
-                  "description" : "GENERIC_NTRIPLES",
-                  "$ref" : "#/components/examples/GENERIC_NTRIPLES"
-                }
-              }
-            },
-            "application/n-quads" : {
-              "examples" : {
-                "GENERIC_NQUADS" : {
-                  "description" : "GENERIC_NQUADS",
-                  "$ref" : "#/components/examples/GENERIC_NQUADS"
-                }
-              }
-            },
-            "application/ld+json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/GENERIC_JSONLD"
               }
             }
           },
-          "required" : true
+          "404": {
+            "description": "Database does not exist"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Database"
+        ],
+        "summary": "Import namespaces",
+        "description": "Add namespaces to the database via a block or blocks of RDF that declares them",
+        "operationId": "importNamespaces",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/db"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "text/turtle": {
+              "examples": {
+                "GENERIC_TURTLE": {
+                  "description": "GENERIC_TURTLE",
+                  "$ref": "#/components/examples/GENERIC_TURTLE"
+                }
+              }
+            },
+            "application/trig": {
+              "examples": {
+                "GENERIC_TRIG": {
+                  "description": "GENERIC_TRIG",
+                  "$ref": "#/components/examples/GENERIC_TRIG"
+                }
+              }
+            },
+            "application/rdf+xml": {
+              "examples": {
+                "GENERIC_RDFXML": {
+                  "description": "GENERIC_RDFXML",
+                  "$ref": "#/components/examples/GENERIC_RDFXML"
+                }
+              }
+            },
+            "application/n-triples": {
+              "examples": {
+                "GENERIC_NTRIPLES": {
+                  "description": "GENERIC_NTRIPLES",
+                  "$ref": "#/components/examples/GENERIC_NTRIPLES"
+                }
+              }
+            },
+            "application/n-quads": {
+              "examples": {
+                "GENERIC_NQUADS": {
+                  "description": "GENERIC_NQUADS",
+                  "$ref": "#/components/examples/GENERIC_NQUADS"
+                }
+              }
+            },
+            "application/ld+json": {
+              "schema": {
+                "$ref": "#/components/schemas/GENERIC_JSONLD"
+              }
+            }
+          },
+          "required": true
         },
-        "responses" : {
-          "404" : {
-            "$ref" : "#/components/responses/DB_TX_404"
+        "responses": {
+          "200": {
+            "description": "A JSON object listing the prefixes and IRIs of the stored namespaces",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JSON_NAMESPACES"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Database does not exist"
           }
         }
       }
     },
-    "transaction/commit/{txid}" : {
-      "post" : {
-        "tags" : [ "Transactions" ],
-        "operationId" : "commit",
-        "parameters" : [ {
-          "$ref" : "#/components/parameters/txid"
-        } ],
-        "responses" : {
-          "default" : {
-            "description" : "default response",
-            "content" : {
-              "*/*" : { }
+    "/{db}/export": {
+      "get": {
+        "tags": [
+          "Database"
+        ],
+        "summary": "Export database",
+        "operationId": "export",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/db"
+          },
+          {
+            "name": "obf",
+            "in": "query",
+            "description": "Path to an obfuscation configuration file, or DEFAULT",
+            "schema": {
+              "type": "string"
             }
           }
-        }
-      }
-    },
-    "transaction/rollback/{txid}" : {
-      "post" : {
-        "tags" : [ "Transactions" ],
-        "operationId" : "rollback",
-        "parameters" : [ {
-          "$ref" : "#/components/parameters/txid"
-        } ],
-        "responses" : {
-          "default" : {
-            "description" : "default response",
-            "content" : {
-              "*/*" : { }
+        ],
+        "responses": {
+          "200": {
+            "description": "RDF serialization of the database",
+            "content": {
+              "text/turtle": {
+                "examples": {
+                  "GENERIC_TURTLE": {
+                    "description": "GENERIC_TURTLE",
+                    "$ref": "#/components/examples/GENERIC_TURTLE"
+                  }
+                }
+              },
+              "application/trig": {
+                "examples": {
+                  "GENERIC_TRIG": {
+                    "description": "GENERIC_TRIG",
+                    "$ref": "#/components/examples/GENERIC_TRIG"
+                  }
+                }
+              },
+              "application/rdf+xml": {
+                "examples": {
+                  "GENERIC_RDFXML": {
+                    "description": "GENERIC_RDFXML",
+                    "$ref": "#/components/examples/GENERIC_RDFXML"
+                  }
+                }
+              },
+              "application/n-triples": {
+                "examples": {
+                  "GENERIC_NTRIPLES": {
+                    "description": "GENERIC_NTRIPLES",
+                    "$ref": "#/components/examples/GENERIC_NTRIPLES"
+                  }
+                }
+              },
+              "application/n-quads": {
+                "examples": {
+                  "GENERIC_NQUADS": {
+                    "description": "GENERIC_NQUADS",
+                    "$ref": "#/components/examples/GENERIC_NQUADS"
+                  }
+                }
+              },
+              "application/ld+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GENERIC_JSONLD"
+                }
+              }
             }
+          },
+          "404": {
+            "description": "Database does not exist"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Database"
+        ],
+        "summary": "Export database (obfuscated)",
+        "operationId": "exportObfuscated",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/db"
+          }
+        ],
+        "requestBody": {
+          "description": "Obfuscation configuration",
+          "content": {
+            "text/turtle": {
+              "example": "@prefix obf: <tag:stardog:api:obf:> .\n\n[] a obf:Obfuscation ;\n    obf:digest \"SHA-256\" ;\n    obf:include [\n        obf:position obf:any ;\n        obf:pattern \".*\"\n    ] ;\n\n    obf:exclude [\n        obf:position obf:any ;\n        obf:namespace \"rdf\"\n    ] ;\n    obf:exclude [\n        obf:position obf:any ;\n        obf:namespace \"owl\"\n    ] ;\n    obf:exclude [\n        obf:position obf:predicate ;\n        obf:namespace \"rdfs\"\n    ] ;"
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Obfuscated RDF serialization of the database",
+            "content": {
+              "text/turtle": {
+                "examples": {
+                  "GENERIC_TURTLE_OBF": {
+                    "description": "GENERIC_TURTLE_OBF",
+                    "$ref": "#/components/examples/GENERIC_TURTLE_OBF"
+                  }
+                }
+              },
+              "application/trig": {
+                "examples": {
+                  "GENERIC_TRIG_OBF": {
+                    "description": "GENERIC_TRIG_OBF",
+                    "$ref": "#/components/examples/GENERIC_TRIG_OBF"
+                  }
+                }
+              },
+              "application/rdf+xml": {
+                "examples": {
+                  "GENERIC_RDFXML_OBF": {
+                    "description": "GENERIC_RDFXML_OBF",
+                    "$ref": "#/components/examples/GENERIC_RDFXML_OBF"
+                  }
+                }
+              },
+              "application/n-triples": {
+                "examples": {
+                  "GENERIC_NTRIPLES_OBF": {
+                    "description": "GENERIC_NTRIPLES_OBF",
+                    "$ref": "#/components/examples/GENERIC_NTRIPLES_OBF"
+                  }
+                }
+              },
+              "application/n-quads": {
+                "examples": {
+                  "GENERIC_NQUADS_OBF": {
+                    "description": "GENERIC_NQUADS_OBF",
+                    "$ref": "#/components/examples/GENERIC_NQUADS_OBF"
+                  }
+                }
+              },
+              "application/ld+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GENERIC_JSONLD_OBF"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Database does not exist"
           }
         }
       }
     },
-    "transaction/begin/{txid}" : {
-      "put" : {
-        "tags" : [ "Transactions" ],
-        "operationId" : "beginTx",
-        "parameters" : [ {
-          "$ref" : "#/components/parameters/txid"
-        } ],
-        "responses" : {
-          "default" : {
-            "description" : "default response",
-            "content" : {
-              "*/*" : { }
+    "/{db}/model": {
+      "get": {
+        "tags": [
+          "Database"
+        ],
+        "summary": "Generate Model",
+        "description": "Generate the reasoning model used by this database in various formats",
+        "operationId": "generateModel",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/db"
+          },
+          {
+            "$ref": "#/components/parameters/reasoning"
+          },
+          {
+            "name": "output",
+            "in": "query",
+            "description": "Desired output format (text, owl, shacl, sql, graphql)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "RDF serialization of the reasoning model",
+            "content": {
+              "text/turtle": {
+                "examples": {
+                  "GENERIC_TURTLE": {
+                    "description": "GENERIC_TURTLE",
+                    "$ref": "#/components/examples/GENERIC_TURTLE"
+                  }
+                }
+              },
+              "application/trig": {
+                "examples": {
+                  "GENERIC_TRIG": {
+                    "description": "GENERIC_TRIG",
+                    "$ref": "#/components/examples/GENERIC_TRIG"
+                  }
+                }
+              },
+              "application/rdf+xml": {
+                "examples": {
+                  "GENERIC_RDFXML": {
+                    "description": "GENERIC_RDFXML",
+                    "$ref": "#/components/examples/GENERIC_RDFXML"
+                  }
+                }
+              },
+              "application/n-triples": {
+                "examples": {
+                  "GENERIC_NTRIPLES": {
+                    "description": "GENERIC_NTRIPLES",
+                    "$ref": "#/components/examples/GENERIC_NTRIPLES"
+                  }
+                }
+              },
+              "application/n-quads": {
+                "examples": {
+                  "GENERIC_NQUADS": {
+                    "description": "GENERIC_NQUADS",
+                    "$ref": "#/components/examples/GENERIC_NQUADS"
+                  }
+                }
+              },
+              "application/ld+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GENERIC_JSONLD"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Database does not exist"
+          }
+        }
+      }
+    },
+    "/{db}/size": {
+      "get": {
+        "tags": [
+          "Database"
+        ],
+        "summary": "Get DB Size",
+        "operationId": "size",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/db"
+          },
+          {
+            "name": "exact",
+            "in": "query",
+            "description": "Whether to request that the database size be exact instead of approximate",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The size (in triples) of the database",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Database does not exist"
+          }
+        }
+      }
+    },
+    "/admin/databases/backup_all": {
+      "put": {
+        "tags": [
+          "Database"
+        ],
+        "summary": "Backup all databases",
+        "description": "Create a backup of all databases on the server",
+        "operationId": "backupAll",
+        "parameters": [
+          {
+            "name": "to",
+            "in": "query",
+            "description": "File location on the server to which to save the backups (defaults to $STARDOG_HOME/.backup)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/GENERIC_RESPONSE_MESSAGE"
+          }
+        }
+      }
+    },
+    "/admin/databases": {
+      "get": {
+        "tags": [
+          "Database"
+        ],
+        "summary": "List databases",
+        "description": "List all the databases in the server",
+        "operationId": "listDatabases",
+        "responses": {
+          "200": {
+            "description": "A JSON object listing the databases",
+            "content": {
+              "application/json": {
+                "example": {
+                  "databases": [
+                    "myDb",
+                    "myOtherDb"
+                  ]
+                }
+              }
             }
           }
         }
       },
-      "post" : {
-        "tags" : [ "Transactions" ],
-        "operationId" : "beginTx",
-        "parameters" : [ {
-          "$ref" : "#/components/parameters/txid"
-        } ],
-        "responses" : {
-          "default" : {
-            "description" : "default response",
-            "content" : {
-              "*/*" : { }
+      "post": {
+        "tags": [
+          "Database"
+        ],
+        "summary": "Create database",
+        "description": "Add a new database to the server, optionally with RDF bulk-loaded",
+        "operationId": "createNewDatabase",
+        "requestBody": {
+          "description": "A multipart request with a JSON root element and optionally RDF file contents",
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/DB_CREATE"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Database created"
+          }
+        }
+      }
+    },
+    "/admin/databases/{db}/online": {
+      "put": {
+        "tags": [
+          "Database"
+        ],
+        "summary": "Online database",
+        "description": "Bring a database online",
+        "operationId": "online",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/db"
+          }
+        ],
+        "requestBody": {
+          "description": "Configuration parameters",
+          "content": {
+            "application/json": {
+              "example": {
+                "timeout": 5000
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/GENERIC_RESPONSE_MESSAGE"
+          },
+          "400": {
+            "description": "Invalid or malformed request body"
+          },
+          "404": {
+            "description": "Database does not exist"
+          }
+        }
+      }
+    },
+    "/admin/databases/{db}/options": {
+      "get": {
+        "tags": [
+          "Database"
+        ],
+        "summary": "Get all DB options",
+        "description": "Get the value of every metadata option for a database",
+        "operationId": "getAllOptions",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/db"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "JSON object detailing all database metadata",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "404": {
+            "description": "Database does not exist"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Database"
+        ],
+        "summary": "Get DB options",
+        "description": "Get the value of specific metadata options for a database",
+        "operationId": "getOptions",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/db"
+          }
+        ],
+        "requestBody": {
+          "description": "A JSON object with keys equal to the desired metadata options",
+          "content": {
+            "application/json": {
+              "example": {
+                "database.name": null,
+                "preserve.bnode.ids": null
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "JSON object detailing all database metadata",
+            "content": {
+              "application/json": {
+                "example": {
+                  "database.name": "myDb",
+                  "preserve.bnode.ids": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Database does not exist"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Database"
+        ],
+        "summary": "Set DB options",
+        "description": "Set the value of specific metadata options for a database",
+        "operationId": "setOption",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/db"
+          }
+        ],
+        "requestBody": {
+          "description": "A JSON object with keys and values equal to the desired metadata options",
+          "content": {
+            "application/json": {
+              "example": {
+                "spatial.result.limit": 10000,
+                "query.all.graphs": true
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/GENERIC_RESPONSE_MESSAGE"
+          },
+          "404": {
+            "description": "Database does not exist"
+          }
+        }
+      }
+    },
+    "/admin/config_properties": {
+      "get": {
+        "tags": [
+          "Database"
+        ],
+        "summary": "Get all metadata properties",
+        "description": "Get information on all database metadata properties, including description and example values",
+        "operationId": "getAllMetaProperties",
+        "responses": {
+          "200": {
+            "description": "JSON object detailing all metadata options",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JSON_CONFIG_PROPERTIES"
+                }
+              }
             }
           }
         }
       }
     },
-    "transaction" : {
-      "get" : {
-        "tags" : [ "Transactions" ],
-        "operationId" : "listTransactions",
-        "responses" : {
-          "default" : {
-            "description" : "default response",
-            "content" : {
-              "*/*" : { }
-            }
+    "/admin/databases/{db}": {
+      "delete": {
+        "tags": [
+          "Database"
+        ],
+        "summary": "Drop database",
+        "description": "Delete the datbase",
+        "operationId": "dropDatabase",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/db"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/GENERIC_RESPONSE_MESSAGE"
+          },
+          "404": {
+            "description": "Database does not exist"
           }
         }
       }
     },
-    "/admin/databases" : {
-      "get" : {
-        "tags" : [ "Database" ],
-        "summary" : "List databases",
-        "description" : "List all the databases in the server",
-        "operationId" : "listDatabases",
-        "responses" : {
-          "200" : {
-            "description" : "A JSON object listing the databases",
-            "content" : {
-              "application/json" : {
-                "example" : {
-                  "databases" : [ "myDb", "myOtherDb" ]
+    "/admin/restore_all": {
+      "put": {
+        "tags": [
+          "Database"
+        ],
+        "summary": "Restore multiple databases",
+        "description": "Restore multiple databases from backup",
+        "operationId": "restoreAll",
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "description": "The location on the server of the backups",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/GENERIC_RESPONSE_MESSAGE"
+          }
+        }
+      }
+    },
+    "/admin/databases/{db}/backup": {
+      "put": {
+        "tags": [
+          "Database"
+        ],
+        "summary": "Backup a database",
+        "description": "Create a backup of a database on the server",
+        "operationId": "backup",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/db"
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "description": "File location on the server to which to save the backup (defaults to $STARDOG_HOME/.backup)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/GENERIC_RESPONSE_MESSAGE"
+          },
+          "404": {
+            "description": "Database does not exist"
+          }
+        }
+      }
+    },
+    "/admin/databases/{db}/optimize": {
+      "put": {
+        "tags": [
+          "Database"
+        ],
+        "summary": "Optimize database",
+        "description": "Optimize the index of a database",
+        "operationId": "optimize",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/db"
+          }
+        ],
+        "requestBody": {
+          "description": "Configuration parameters",
+          "content": {
+            "application/json": {}
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/GENERIC_RESPONSE_MESSAGE"
+          },
+          "400": {
+            "description": "Invalid or malformed request body"
+          },
+          "404": {
+            "description": "Database does not exist"
+          }
+        }
+      }
+    },
+    "/admin/databases/{db}/offline": {
+      "put": {
+        "tags": [
+          "Database"
+        ],
+        "summary": "Offline database",
+        "description": "Take a database offline",
+        "operationId": "offline",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/db"
+          }
+        ],
+        "requestBody": {
+          "description": "Configuration parameters",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DB_OFFLINE_ONLINE"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/GENERIC_RESPONSE_MESSAGE"
+          },
+          "400": {
+            "description": "Invalid or malformed request body"
+          },
+          "404": {
+            "description": "Database does not exist"
+          }
+        }
+      }
+    },
+    "/admin/databases/{db}/repair": {
+      "put": {
+        "tags": [
+          "Database"
+        ],
+        "summary": "Repair database",
+        "description": "Attempt to recover a corrupted database",
+        "operationId": "repair",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/db"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/GENERIC_RESPONSE_MESSAGE"
+          },
+          "404": {
+            "description": "Database does not exist"
+          }
+        }
+      }
+    },
+    "/admin/restore": {
+      "put": {
+        "tags": [
+          "Database"
+        ],
+        "summary": "Restore database",
+        "description": "Restore a database from backup",
+        "operationId": "restore",
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "description": "The location on the server of the backup",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "force",
+            "in": "query",
+            "description": "Whether or not to overwrite an existing database with this backup",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "description": "The name of the restored database, if different",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/GENERIC_RESPONSE_MESSAGE"
+          }
+        }
+      }
+    },
+    "/{db}/transaction/begin": {
+      "post": {
+        "tags": [
+          "Transactions"
+        ],
+        "summary": "Begin a transaction",
+        "operationId": "begin",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/db"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/plain": {
+                "example": "067e6162-3b6f-4ae2-a171-2470b63dff00"
+              }
+            }
+          },
+          "404": {
+            "description": "Database Not Found"
+          }
+        },
+        "x-sort-order": {
+          "group": "1",
+          "order": "1"
+        }
+      }
+    },
+    "/{db}/transaction/begin/{txid}": {
+      "post": {
+        "tags": [
+          "Transactions"
+        ],
+        "summary": "Begin a transaction with specified txid",
+        "operationId": "beginTx",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/db"
+          },
+          {
+            "$ref": "#/components/parameters/txid"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Transaction begun",
+            "content": {
+              "text/plain": {
+                "example": "067e6162-3b6f-4ae2-a171-2470b63dff00"
+              }
+            }
+          },
+          "404": {
+            "description": "Database Not Found"
+          }
+        },
+        "x-sort-order": {
+          "group": "1",
+          "order": "2"
+        }
+      }
+    },
+    "/{db}/transaction/commit/{txid}": {
+      "post": {
+        "tags": [
+          "Transactions"
+        ],
+        "summary": "Commit a transaction",
+        "operationId": "commit",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/db"
+          },
+          {
+            "$ref": "#/components/parameters/txid"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Commit successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/COMMIT_RESULT"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/DB_TX_404"
+          }
+        },
+        "x-sort-order": {
+          "group": "1",
+          "order": "3"
+        }
+      }
+    },
+    "/{db}/transaction/rollback/{txid}": {
+      "post": {
+        "tags": [
+          "Transactions"
+        ],
+        "summary": "Rollback a transaction",
+        "operationId": "rollback",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/db"
+          },
+          {
+            "$ref": "#/components/parameters/txid"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/EMPTY_SUCCESS"
+          },
+          "404": {
+            "$ref": "#/components/responses/DB_TX_404"
+          }
+        },
+        "x-sort-order": {
+          "group": "1",
+          "order": "4"
+        }
+      }
+    },
+    "/{db}/{txid}/remove": {
+      "post": {
+        "tags": [
+          "Transactions"
+        ],
+        "summary": "Remove data within a transaction",
+        "operationId": "remove",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/db"
+          },
+          {
+            "$ref": "#/components/parameters/txid"
+          },
+          {
+            "$ref": "#/components/parameters/graph-uri"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "text/turtle": {
+              "examples": {
+                "GENERIC_TURTLE": {
+                  "description": "GENERIC_TURTLE",
+                  "$ref": "#/components/examples/GENERIC_TURTLE"
+                }
+              }
+            },
+            "application/trig": {
+              "examples": {
+                "GENERIC_TRIG": {
+                  "description": "GENERIC_TRIG",
+                  "$ref": "#/components/examples/GENERIC_TRIG"
+                }
+              }
+            },
+            "application/rdf+xml": {
+              "examples": {
+                "GENERIC_RDFXML": {
+                  "description": "GENERIC_RDFXML",
+                  "$ref": "#/components/examples/GENERIC_RDFXML"
+                }
+              }
+            },
+            "application/n-triples": {
+              "examples": {
+                "GENERIC_NTRIPLES": {
+                  "description": "GENERIC_NTRIPLES",
+                  "$ref": "#/components/examples/GENERIC_NTRIPLES"
+                }
+              }
+            },
+            "application/n-quads": {
+              "examples": {
+                "GENERIC_NQUADS": {
+                  "description": "GENERIC_NQUADS",
+                  "$ref": "#/components/examples/GENERIC_NQUADS"
+                }
+              }
+            },
+            "application/ld+json": {
+              "schema": {
+                "$ref": "#/components/schemas/GENERIC_JSONLD"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/EMPTY_SUCCESS"
+          },
+          "404": {
+            "$ref": "#/components/responses/DB_TX_404"
+          }
+        }
+      }
+    },
+    "/{db}/{txid}/add": {
+      "post": {
+        "tags": [
+          "Transactions"
+        ],
+        "summary": "Add data within a transaction",
+        "operationId": "add",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/db"
+          },
+          {
+            "$ref": "#/components/parameters/txid"
+          },
+          {
+            "$ref": "#/components/parameters/graph-uri"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "text/turtle": {
+              "examples": {
+                "GENERIC_TURTLE": {
+                  "description": "GENERIC_TURTLE",
+                  "$ref": "#/components/examples/GENERIC_TURTLE"
+                }
+              }
+            },
+            "application/trig": {
+              "examples": {
+                "GENERIC_TRIG": {
+                  "description": "GENERIC_TRIG",
+                  "$ref": "#/components/examples/GENERIC_TRIG"
+                }
+              }
+            },
+            "application/rdf+xml": {
+              "examples": {
+                "GENERIC_RDFXML": {
+                  "description": "GENERIC_RDFXML",
+                  "$ref": "#/components/examples/GENERIC_RDFXML"
+                }
+              }
+            },
+            "application/n-triples": {
+              "examples": {
+                "GENERIC_NTRIPLES": {
+                  "description": "GENERIC_NTRIPLES",
+                  "$ref": "#/components/examples/GENERIC_NTRIPLES"
+                }
+              }
+            },
+            "application/n-quads": {
+              "examples": {
+                "GENERIC_NQUADS": {
+                  "description": "GENERIC_NQUADS",
+                  "$ref": "#/components/examples/GENERIC_NQUADS"
+                }
+              }
+            },
+            "application/ld+json": {
+              "schema": {
+                "$ref": "#/components/schemas/GENERIC_JSONLD"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/EMPTY_SUCCESS"
+          },
+          "404": {
+            "$ref": "#/components/responses/DB_TX_404"
+          }
+        }
+      }
+    },
+    "/{db}/transaction": {
+      "get": {
+        "tags": [
+          "Transactions"
+        ],
+        "summary": "List all open transactions on a database",
+        "operationId": "listTransactions",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/db"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TRANSACTION"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Database Not Found"
+          }
+        }
+      }
+    },
+    "/{db}/{txid}/clear": {
+      "post": {
+        "tags": [
+          "Transactions"
+        ],
+        "summary": "Clear database within a transaction",
+        "operationId": "clear",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/db"
+          },
+          {
+            "$ref": "#/components/parameters/txid"
+          },
+          {
+            "$ref": "#/components/parameters/graph-uri"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/EMPTY_SUCCESS"
+          },
+          "404": {
+            "$ref": "#/components/responses/DB_TX_404"
+          }
+        }
+      }
+    },
+    "/{db}": {
+      "get": {
+        "tags": [
+          "Graph Store Protocol"
+        ],
+        "summary": "GET graph",
+        "description": "Retrieves an RDF payload that is a serialization of the named graph paired with the graph IRI in the database",
+        "operationId": "getGraph",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/db"
+          },
+          {
+            "name": "graph",
+            "in": "query",
+            "description": "IRI of the named graph to retrieve",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "default",
+            "in": "query",
+            "description": "Include instead of 'query' to operate on the default graph",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "RDF serialization of the named graph",
+            "content": {
+              "text/turtle": {
+                "examples": {
+                  "GENERIC_TURTLE": {
+                    "description": "GENERIC_TURTLE",
+                    "$ref": "#/components/examples/GENERIC_TURTLE"
+                  }
+                }
+              },
+              "application/trig": {
+                "examples": {
+                  "GENERIC_TRIG": {
+                    "description": "GENERIC_TRIG",
+                    "$ref": "#/components/examples/GENERIC_TRIG"
+                  }
+                }
+              },
+              "application/rdf+xml": {
+                "examples": {
+                  "GENERIC_RDFXML": {
+                    "description": "GENERIC_RDFXML",
+                    "$ref": "#/components/examples/GENERIC_RDFXML"
+                  }
+                }
+              },
+              "application/n-triples": {
+                "examples": {
+                  "GENERIC_NTRIPLES": {
+                    "description": "GENERIC_NTRIPLES",
+                    "$ref": "#/components/examples/GENERIC_NTRIPLES"
+                  }
+                }
+              },
+              "application/n-quads": {
+                "examples": {
+                  "GENERIC_NQUADS": {
+                    "description": "GENERIC_NQUADS",
+                    "$ref": "#/components/examples/GENERIC_NQUADS"
+                  }
+                }
+              },
+              "application/ld+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GENERIC_JSONLD"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Database does not exist"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Graph Store Protocol"
+        ],
+        "summary": "PUT graph",
+        "description": "Stores the enclosed RDF payload as RDF graph content",
+        "operationId": "setGraph",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/db"
+          },
+          {
+            "name": "graph",
+            "in": "query",
+            "description": "IRI of the target named graph",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "default",
+            "in": "query",
+            "description": "Include instead of 'query' to operate on the default graph",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "text/turtle": {
+              "examples": {
+                "GENERIC_TURTLE": {
+                  "description": "GENERIC_TURTLE",
+                  "$ref": "#/components/examples/GENERIC_TURTLE"
+                }
+              }
+            },
+            "application/trig": {
+              "examples": {
+                "GENERIC_TRIG": {
+                  "description": "GENERIC_TRIG",
+                  "$ref": "#/components/examples/GENERIC_TRIG"
+                }
+              }
+            },
+            "application/rdf+xml": {
+              "examples": {
+                "GENERIC_RDFXML": {
+                  "description": "GENERIC_RDFXML",
+                  "$ref": "#/components/examples/GENERIC_RDFXML"
+                }
+              }
+            },
+            "application/n-triples": {
+              "examples": {
+                "GENERIC_NTRIPLES": {
+                  "description": "GENERIC_NTRIPLES",
+                  "$ref": "#/components/examples/GENERIC_NTRIPLES"
+                }
+              }
+            },
+            "application/n-quads": {
+              "examples": {
+                "GENERIC_NQUADS": {
+                  "description": "GENERIC_NQUADS",
+                  "$ref": "#/components/examples/GENERIC_NQUADS"
+                }
+              }
+            },
+            "application/ld+json": {
+              "schema": {
+                "$ref": "#/components/schemas/GENERIC_JSONLD"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Graph overwritten"
+          },
+          "201": {
+            "description": "Graph created",
+            "headers": {
+              "Location": {
+                "style": "simple",
+                "schema": {
+                  "type": "string",
+                  "format": "URI"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Database does not exist"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Graph Store Protocol"
+        ],
+        "summary": "POST graph",
+        "description": "Merges the enclosed RDF payload with the specified graph content",
+        "operationId": "appendToGraph",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/db"
+          },
+          {
+            "name": "graph",
+            "in": "query",
+            "description": "IRI of the target named graph",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "default",
+            "in": "query",
+            "description": "Include instead of 'query' to operate on the default graph",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "text/turtle": {
+              "examples": {
+                "GENERIC_TURTLE": {
+                  "description": "GENERIC_TURTLE",
+                  "$ref": "#/components/examples/GENERIC_TURTLE"
+                }
+              }
+            },
+            "application/trig": {
+              "examples": {
+                "GENERIC_TRIG": {
+                  "description": "GENERIC_TRIG",
+                  "$ref": "#/components/examples/GENERIC_TRIG"
+                }
+              }
+            },
+            "application/rdf+xml": {
+              "examples": {
+                "GENERIC_RDFXML": {
+                  "description": "GENERIC_RDFXML",
+                  "$ref": "#/components/examples/GENERIC_RDFXML"
+                }
+              }
+            },
+            "application/n-triples": {
+              "examples": {
+                "GENERIC_NTRIPLES": {
+                  "description": "GENERIC_NTRIPLES",
+                  "$ref": "#/components/examples/GENERIC_NTRIPLES"
+                }
+              }
+            },
+            "application/n-quads": {
+              "examples": {
+                "GENERIC_NQUADS": {
+                  "description": "GENERIC_NQUADS",
+                  "$ref": "#/components/examples/GENERIC_NQUADS"
+                }
+              }
+            },
+            "application/ld+json": {
+              "schema": {
+                "$ref": "#/components/schemas/GENERIC_JSONLD"
+              }
+            },
+            "multipart/form-data": {}
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Graph merged"
+          },
+          "404": {
+            "description": "Database does not exist"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Graph Store Protocol"
+        ],
+        "summary": "DELETE graph",
+        "description": "Deletes the RDF graph content identified by either the request or encoded IRI",
+        "operationId": "dropGraph",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/db"
+          },
+          {
+            "name": "graph",
+            "in": "query",
+            "description": "IRI of the named graph to delete",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "default",
+            "in": "query",
+            "description": "Include instead of 'query' to operate on the default graph",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Graph deleted"
+          },
+          "404": {
+            "description": "Database or Graph does not exist"
+          }
+        }
+      },
+      "head": {
+        "tags": [
+          "Graph Store Protocol"
+        ],
+        "summary": "HEAD graph",
+        "description": "Test dereferenceable IRIs for validity and accessibility",
+        "operationId": "checkGraph",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/db"
+          },
+          {
+            "name": "graph",
+            "in": "query",
+            "description": "IRI of the target named graph",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "default",
+            "in": "query",
+            "description": "Include instead of 'query' to operate on the default graph",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Graph exists and is accessible"
+          },
+          "404": {
+            "description": "Database or Graph does not exist"
+          }
+        }
+      }
+    },
+    "/{db}/query": {
+      "get": {
+        "tags": [
+          "SPARQL"
+        ],
+        "summary": "Perform SPARQL query",
+        "operationId": "get",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/db"
+          },
+          {
+            "$ref": "#/components/parameters/query"
+          },
+          {
+            "$ref": "#/components/parameters/reasoning"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Query results",
+            "content": {
+              "application/sparql-results+xml": {
+                "examples": {
+                  "SPARQL_RESULTS_XML": {
+                    "description": "SPARQL_RESULTS_XML",
+                    "$ref": "#/components/examples/SPARQL_RESULTS_XML"
+                  }
+                }
+              },
+              "application/sparql-results+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SPARQL_RESULTS_JSON"
+                }
+              },
+              "text/csv": {
+                "examples": {
+                  "SPARQL_RESULTS_CSV": {
+                    "description": "SPARQL_RESULTS_CSV",
+                    "$ref": "#/components/examples/SPARQL_RESULTS_CSV"
+                  }
+                }
+              },
+              "text/tsv": {
+                "examples": {
+                  "SPARQL_RESULTS_TSV": {
+                    "description": "SPARQL_RESULTS_TSV",
+                    "$ref": "#/components/examples/SPARQL_RESULTS_TSV"
+                  }
+                }
+              },
+              "text/turtle": {
+                "examples": {
+                  "GENERIC_TURTLE": {
+                    "description": "GENERIC_TURTLE",
+                    "$ref": "#/components/examples/GENERIC_TURTLE"
+                  }
+                }
+              },
+              "application/trig": {
+                "examples": {
+                  "GENERIC_TRIG": {
+                    "description": "GENERIC_TRIG",
+                    "$ref": "#/components/examples/GENERIC_TRIG"
+                  }
+                }
+              },
+              "application/rdf+xml": {
+                "examples": {
+                  "GENERIC_RDFXML": {
+                    "description": "GENERIC_RDFXML",
+                    "$ref": "#/components/examples/GENERIC_RDFXML"
+                  }
+                }
+              },
+              "application/n-triples": {
+                "examples": {
+                  "GENERIC_NTRIPLES": {
+                    "description": "GENERIC_NTRIPLES",
+                    "$ref": "#/components/examples/GENERIC_NTRIPLES"
+                  }
+                }
+              },
+              "application/n-quads": {
+                "examples": {
+                  "GENERIC_NQUADS": {
+                    "description": "GENERIC_NQUADS",
+                    "$ref": "#/components/examples/GENERIC_NQUADS"
+                  }
+                }
+              },
+              "application/ld+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GENERIC_JSONLD"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid query sent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GENERIC_RESPONSE_ERROR_MESSAGE"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Database does not exist"
+          },
+          "406": {
+            "description": "Accept header invalid for type of query sent"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "SPARQL"
+        ],
+        "summary": "Perform SPARQL query",
+        "operationId": "post",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/db"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/sparql-query": {
+              "examples": {
+                "SPARQL_QUERY": {
+                  "description": "SPARQL_QUERY",
+                  "$ref": "#/components/examples/SPARQL_QUERY"
+                }
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/SPARQL_QUERY"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Query results",
+            "content": {
+              "application/sparql-results+xml": {
+                "examples": {
+                  "SPARQL_RESULTS_XML": {
+                    "description": "SPARQL_RESULTS_XML",
+                    "$ref": "#/components/examples/SPARQL_RESULTS_XML"
+                  }
+                }
+              },
+              "application/sparql-results+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SPARQL_RESULTS_JSON"
+                }
+              },
+              "text/csv": {
+                "examples": {
+                  "SPARQL_RESULTS_CSV": {
+                    "description": "SPARQL_RESULTS_CSV",
+                    "$ref": "#/components/examples/SPARQL_RESULTS_CSV"
+                  }
+                }
+              },
+              "text/tsv": {
+                "examples": {
+                  "SPARQL_RESULTS_TSV": {
+                    "description": "SPARQL_RESULTS_TSV",
+                    "$ref": "#/components/examples/SPARQL_RESULTS_TSV"
+                  }
+                }
+              },
+              "text/turtle": {
+                "examples": {
+                  "GENERIC_TURTLE": {
+                    "description": "GENERIC_TURTLE",
+                    "$ref": "#/components/examples/GENERIC_TURTLE"
+                  }
+                }
+              },
+              "application/trig": {
+                "examples": {
+                  "GENERIC_TRIG": {
+                    "description": "GENERIC_TRIG",
+                    "$ref": "#/components/examples/GENERIC_TRIG"
+                  }
+                }
+              },
+              "application/rdf+xml": {
+                "examples": {
+                  "GENERIC_RDFXML": {
+                    "description": "GENERIC_RDFXML",
+                    "$ref": "#/components/examples/GENERIC_RDFXML"
+                  }
+                }
+              },
+              "application/n-triples": {
+                "examples": {
+                  "GENERIC_NTRIPLES": {
+                    "description": "GENERIC_NTRIPLES",
+                    "$ref": "#/components/examples/GENERIC_NTRIPLES"
+                  }
+                }
+              },
+              "application/n-quads": {
+                "examples": {
+                  "GENERIC_NQUADS": {
+                    "description": "GENERIC_NQUADS",
+                    "$ref": "#/components/examples/GENERIC_NQUADS"
+                  }
+                }
+              },
+              "application/ld+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GENERIC_JSONLD"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid query sent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GENERIC_RESPONSE_ERROR_MESSAGE"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Database does not exist"
+          },
+          "406": {
+            "description": "Accept header invalid for type of query sent"
+          }
+        }
+      }
+    },
+    "/{db}/explain": {
+      "get": {
+        "tags": [
+          "SPARQL"
+        ],
+        "summary": "Explain SPARQL query",
+        "operationId": "explainQueryGet",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/db"
+          },
+          {
+            "$ref": "#/components/parameters/query"
+          },
+          {
+            "$ref": "#/components/parameters/reasoning"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Query plan",
+            "content": {
+              "text/plain": {
+                "examples": {
+                  "QUERY_PLAN_TEST": {
+                    "description": "QUERY_PLAN_TEST",
+                    "$ref": "#/components/examples/QUERY_PLAN_TEST"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QUERY_PLAN_JSON"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid query sent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GENERIC_RESPONSE_ERROR_MESSAGE"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Database does not exist"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "SPARQL"
+        ],
+        "summary": "Explain SPARQL query",
+        "operationId": "explainQueryPost",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/db"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/sparql-query": {
+              "examples": {
+                "SPARQL_QUERY": {
+                  "description": "SPARQL_QUERY",
+                  "$ref": "#/components/examples/SPARQL_QUERY"
+                }
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/SPARQL_QUERY"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Query plan",
+            "content": {
+              "text/plain": {
+                "examples": {
+                  "QUERY_PLAN_TEST": {
+                    "description": "QUERY_PLAN_TEST",
+                    "$ref": "#/components/examples/QUERY_PLAN_TEST"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QUERY_PLAN_JSON"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid query sent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GENERIC_RESPONSE_ERROR_MESSAGE"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Database does not exist"
+          }
+        }
+      }
+    },
+    "/{db}/update": {
+      "get": {
+        "tags": [
+          "SPARQL"
+        ],
+        "summary": "Perform SPARQL Update query",
+        "operationId": "updateGet",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/db"
+          },
+          {
+            "$ref": "#/components/parameters/query"
+          },
+          {
+            "$ref": "#/components/parameters/reasoning"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Update query succeeded"
+          },
+          "400": {
+            "description": "Invalid query sent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GENERIC_RESPONSE_ERROR_MESSAGE"
                 }
               }
             }
           }
         }
       },
-      "post" : {
-        "tags" : [ "Database" ],
-        "summary" : "Create database",
-        "description" : "Add a new database to the server, optionally with RDF bulk-loaded",
-        "operationId" : "createNewDatabase",
-        "requestBody" : {
-          "description" : "A multipart request with a JSON root element and optionally RDF file contents",
-          "content" : {
-            "multipart/form-data" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/DB_CREATE"
-              },
-              "example" : {
-                "root" : {
-                  "dbName" : "myDb",
-                  "options" : { },
-                  "files" : [ {
-                    "filename" : "file1.ttl"
-                  } ]
-                },
-                "file1.ttl" : "<urn:a> <urn:b> <urn:c> ."
-              }
-            }
+      "post": {
+        "tags": [
+          "SPARQL"
+        ],
+        "summary": "Perform SPARQL Update query",
+        "operationId": "updatePost",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/db"
           }
-        },
-        "responses" : {
-          "default" : {
-            "description" : "default response",
-            "content" : {
-              "*/*" : { }
-            }
-          }
-        }
-      }
-    },
-    "/admin/databases/{db}/options" : {
-      "get" : {
-        "tags" : [ "Database" ],
-        "summary" : "Get all DB options",
-        "description" : "Get the value of every metadata option for a database",
-        "operationId" : "getAllOptions",
-        "parameters" : [ {
-          "$ref" : "#/components/parameters/db"
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "JSON object detailing all database metadata",
-            "content" : {
-              "application/json" : { }
-            }
-          },
-          "404" : {
-            "description" : "Database does not exist"
-          }
-        }
-      },
-      "put" : {
-        "tags" : [ "Database" ],
-        "summary" : "Get DB options",
-        "description" : "Get the value of specific metadata options for a database",
-        "operationId" : "getOptions",
-        "parameters" : [ {
-          "$ref" : "#/components/parameters/db"
-        } ],
-        "requestBody" : {
-          "description" : "A JSON object with keys equal to the desired metadata options",
-          "content" : {
-            "application/json" : {
-              "example" : {
-                "database.name" : null,
-                "preserve.bnode.ids" : null
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "200" : {
-            "description" : "JSON object detailing all database metadata",
-            "content" : {
-              "application/json" : {
-                "example" : {
-                  "database.name" : "myDb",
-                  "preserve.bnode.ids" : true
-                }
-              }
-            }
-          },
-          "404" : {
-            "description" : "Database does not exist"
-          }
-        }
-      },
-      "post" : {
-        "tags" : [ "Database" ],
-        "summary" : "Set DB options",
-        "description" : "Set the value of specific metadata options for a database",
-        "operationId" : "setOption",
-        "parameters" : [ {
-          "$ref" : "#/components/parameters/db"
-        } ],
-        "requestBody" : {
-          "description" : "A JSON object with keys and values equal to the desired metadata options",
-          "content" : {
-            "application/json" : {
-              "example" : {
-                "spatial.result.limit" : 10000,
-                "preserve.bnode.ids" : null
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "200" : {
-            "$ref" : "#/components/responses/GENERIC_RESPONSE_MESSAGE"
-          },
-          "404" : {
-            "description" : "Database does not exist"
-          }
-        }
-      }
-    },
-    "/admin/restore" : {
-      "put" : {
-        "tags" : [ "Database" ],
-        "summary" : "Restore database",
-        "description" : "Restore a database from backup",
-        "operationId" : "restore",
-        "parameters" : [ {
-          "name" : "from",
-          "in" : "query",
-          "description" : "The location on the server of the backup",
-          "required" : true,
-          "schema" : {
-            "type" : "string"
-          }
-        }, {
-          "name" : "force",
-          "in" : "query",
-          "description" : "Whether or not to overwrite an existing database with this backup",
-          "schema" : {
-            "type" : "boolean"
-          }
-        }, {
-          "name" : "name",
-          "in" : "query",
-          "description" : "The name of the restored database, if different",
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "$ref" : "#/components/responses/GENERIC_RESPONSE_MESSAGE"
-          }
-        }
-      }
-    },
-    "/admin/databases/backup_all" : {
-      "put" : {
-        "tags" : [ "Database" ],
-        "summary" : "Backup all databases",
-        "description" : "Create a backup of all databases on the server",
-        "operationId" : "backupAll",
-        "parameters" : [ {
-          "name" : "to",
-          "in" : "query",
-          "description" : "File location on the server to which to save the backups (defaults to $STARDOG_HOME/.backup)",
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "$ref" : "#/components/responses/GENERIC_RESPONSE_MESSAGE"
-          }
-        }
-      }
-    },
-    "/admin/databases/{db}/backup" : {
-      "put" : {
-        "tags" : [ "Database" ],
-        "summary" : "Backup a database",
-        "description" : "Create a backup of a database on the server",
-        "operationId" : "backup",
-        "parameters" : [ {
-          "$ref" : "#/components/parameters/db"
-        }, {
-          "name" : "to",
-          "in" : "query",
-          "description" : "File location on the server to which to save the backup (defaults to $STARDOG_HOME/.backup)",
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "$ref" : "#/components/responses/GENERIC_RESPONSE_MESSAGE"
-          },
-          "404" : {
-            "description" : "Database does not exist"
-          }
-        }
-      }
-    },
-    "/admin/databases/{db}" : {
-      "delete" : {
-        "tags" : [ "Database" ],
-        "summary" : "Drop database",
-        "description" : "Delete the datbase",
-        "operationId" : "dropDatabase",
-        "parameters" : [ {
-          "$ref" : "#/components/parameters/db"
-        } ],
-        "responses" : {
-          "200" : {
-            "$ref" : "#/components/responses/GENERIC_RESPONSE_MESSAGE"
-          },
-          "404" : {
-            "description" : "Database does not exist"
-          }
-        }
-      }
-    },
-    "/admin/config_properties" : {
-      "get" : {
-        "tags" : [ "Database" ],
-        "summary" : "Get all metadata properties",
-        "description" : "Get information on all database metadata properties, including description and example values",
-        "operationId" : "getAllMetaProperties",
-        "responses" : {
-          "200" : {
-            "description" : "JSON object detailing all metadata options",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/JSON_CONFIG_PROPERTIES"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/admin/databases/{db}/offline" : {
-      "put" : {
-        "tags" : [ "Database" ],
-        "summary" : "Offline database",
-        "description" : "Take a database offline",
-        "operationId" : "offline",
-        "parameters" : [ {
-          "$ref" : "#/components/parameters/db"
-        } ],
-        "requestBody" : {
-          "description" : "Configuration parameters",
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/DB_OFFLINE_ONLINE"
-              }
-            }
-          }
-        },
-        "responses" : {
-          "200" : {
-            "$ref" : "#/components/responses/GENERIC_RESPONSE_MESSAGE"
-          },
-          "400" : {
-            "description" : "Invalid or malformed request body"
-          },
-          "404" : {
-            "description" : "Database does not exist"
-          }
-        }
-      }
-    },
-    "/admin/databases/{db}/optimize" : {
-      "put" : {
-        "tags" : [ "Database" ],
-        "summary" : "Optimize database",
-        "description" : "Optimize the index of a database",
-        "operationId" : "optimize",
-        "parameters" : [ {
-          "$ref" : "#/components/parameters/db"
-        } ],
-        "requestBody" : {
-          "description" : "Configuration parameters",
-          "content" : {
-            "application/json" : { }
-          }
-        },
-        "responses" : {
-          "200" : {
-            "$ref" : "#/components/responses/GENERIC_RESPONSE_MESSAGE"
-          },
-          "400" : {
-            "description" : "Invalid or malformed request body"
-          },
-          "404" : {
-            "description" : "Database does not exist"
-          }
-        }
-      }
-    },
-    "/admin/databases/{db}/repair" : {
-      "put" : {
-        "tags" : [ "Database" ],
-        "summary" : "Repair database",
-        "description" : "Attempt to recover a corrupted database",
-        "operationId" : "repair",
-        "parameters" : [ {
-          "$ref" : "#/components/parameters/db"
-        } ],
-        "responses" : {
-          "200" : {
-            "$ref" : "#/components/responses/GENERIC_RESPONSE_MESSAGE"
-          },
-          "404" : {
-            "description" : "Database does not exist"
-          }
-        }
-      }
-    },
-    "/admin/databases/{db}/online" : {
-      "put" : {
-        "tags" : [ "Database" ],
-        "summary" : "Online database",
-        "description" : "Bring a database online",
-        "operationId" : "online",
-        "parameters" : [ {
-          "$ref" : "#/components/parameters/db"
-        } ],
-        "requestBody" : {
-          "description" : "Configuration parameters",
-          "content" : {
-            "application/json" : {
-              "example" : {
-                "timeout" : 5000
-              }
-            }
-          }
-        },
-        "responses" : {
-          "200" : {
-            "$ref" : "#/components/responses/GENERIC_RESPONSE_MESSAGE"
-          },
-          "400" : {
-            "description" : "Invalid or malformed request body"
-          },
-          "404" : {
-            "description" : "Database does not exist"
-          }
-        }
-      }
-    },
-    "/admin/restore_all" : {
-      "put" : {
-        "tags" : [ "Database" ],
-        "summary" : "Restore multiple databases",
-        "description" : "Restore multiple databases from backup",
-        "operationId" : "restoreAll",
-        "parameters" : [ {
-          "name" : "from",
-          "in" : "query",
-          "description" : "The location on the server of the backups",
-          "required" : true,
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "$ref" : "#/components/responses/GENERIC_RESPONSE_MESSAGE"
-          }
-        }
-      }
-    },
-    "/{db}/size" : {
-      "get" : {
-        "tags" : [ "Database" ],
-        "summary" : "Get DB Size",
-        "operationId" : "size",
-        "parameters" : [ {
-          "$ref" : "#/components/parameters/db"
-        }, {
-          "name" : "exact",
-          "in" : "query",
-          "description" : "Whether to request that the database size be exact instead of approximate",
-          "schema" : {
-            "type" : "boolean"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "The size (in triples) of the database",
-            "content" : {
-              "text/plain" : {
-                "schema" : {
-                  "type" : "integer"
-                }
-              }
-            }
-          },
-          "404" : {
-            "description" : "Database does not exist"
-          }
-        }
-      }
-    },
-    "/{db}/export" : {
-      "get" : {
-        "tags" : [ "Database" ],
-        "summary" : "Export database",
-        "operationId" : "export",
-        "parameters" : [ {
-          "$ref" : "#/components/parameters/db"
-        }, {
-          "name" : "obf",
-          "in" : "query",
-          "description" : "Path to an obfuscation configuration file, or DEFAULT",
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "RDF serialization of the database",
-            "content" : {
-              "text/turtle" : {
-                "examples" : {
-                  "GENERIC_TURTLE" : {
-                    "description" : "GENERIC_TURTLE",
-                    "$ref" : "#/components/examples/GENERIC_TURTLE"
-                  }
-                }
-              },
-              "application/trig" : {
-                "examples" : {
-                  "GENERIC_TRIG" : {
-                    "description" : "GENERIC_TRIG",
-                    "$ref" : "#/components/examples/GENERIC_TRIG"
-                  }
-                }
-              },
-              "application/rdf+xml" : {
-                "examples" : {
-                  "GENERIC_RDFXML" : {
-                    "description" : "GENERIC_RDFXML",
-                    "$ref" : "#/components/examples/GENERIC_RDFXML"
-                  }
-                }
-              },
-              "application/n-triples" : {
-                "examples" : {
-                  "GENERIC_NTRIPLES" : {
-                    "description" : "GENERIC_NTRIPLES",
-                    "$ref" : "#/components/examples/GENERIC_NTRIPLES"
-                  }
-                }
-              },
-              "application/n-quads" : {
-                "examples" : {
-                  "GENERIC_NQUADS" : {
-                    "description" : "GENERIC_NQUADS",
-                    "$ref" : "#/components/examples/GENERIC_NQUADS"
-                  }
-                }
-              },
-              "application/ld+json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/GENERIC_JSONLD"
-                }
-              }
-            }
-          },
-          "404" : {
-            "description" : "Database does not exist"
-          }
-        }
-      },
-      "post" : {
-        "tags" : [ "Database" ],
-        "summary" : "Export database (obfuscated)",
-        "operationId" : "exportObfuscated",
-        "parameters" : [ {
-          "$ref" : "#/components/parameters/db"
-        } ],
-        "requestBody" : {
-          "description" : "Obfuscation configuration",
-          "content" : {
-            "text/turtle" : {
-              "example" : "@prefix obf: <tag:stardog:api:obf:> .\n\n[] a obf:Obfuscation ;\n    obf:digest \"SHA-256\" ;\n    obf:include [\n        obf:position obf:any ;\n        obf:pattern \".*\"\n    ] ;\n\n    obf:exclude [\n        obf:position obf:any ;\n        obf:namespace \"rdf\"\n    ] ;\n    obf:exclude [\n        obf:position obf:any ;\n        obf:namespace \"owl\"\n    ] ;\n    obf:exclude [\n        obf:position obf:predicate ;\n        obf:namespace \"rdfs\"\n    ] ;"
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "200" : {
-            "description" : "Obfuscated RDF serialization of the database",
-            "content" : {
-              "text/turtle" : {
-                "examples" : {
-                  "GENERIC_TURTLE_OBF" : {
-                    "description" : "GENERIC_TURTLE_OBF",
-                    "$ref" : "#/components/examples/GENERIC_TURTLE_OBF"
-                  }
-                }
-              },
-              "application/trig" : {
-                "examples" : {
-                  "GENERIC_TRIG_OBF" : {
-                    "description" : "GENERIC_TRIG_OBF",
-                    "$ref" : "#/components/examples/GENERIC_TRIG_OBF"
-                  }
-                }
-              },
-              "application/rdf+xml" : {
-                "examples" : {
-                  "GENERIC_RDFXML_OBF" : {
-                    "description" : "GENERIC_RDFXML_OBF",
-                    "$ref" : "#/components/examples/GENERIC_RDFXML_OBF"
-                  }
-                }
-              },
-              "application/n-triples" : {
-                "examples" : {
-                  "GENERIC_NTRIPLES_OBF" : {
-                    "description" : "GENERIC_NTRIPLES_OBF",
-                    "$ref" : "#/components/examples/GENERIC_NTRIPLES_OBF"
-                  }
-                }
-              },
-              "application/n-quads" : {
-                "examples" : {
-                  "GENERIC_NQUADS_OBF" : {
-                    "description" : "GENERIC_NQUADS_OBF",
-                    "$ref" : "#/components/examples/GENERIC_NQUADS_OBF"
-                  }
-                }
-              },
-              "application/ld+json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/GENERIC_JSONLD_OBF"
-                }
-              }
-            }
-          },
-          "404" : {
-            "description" : "Database does not exist"
-          }
-        }
-      }
-    },
-    "/{db}/namespaces" : {
-      "get" : {
-        "tags" : [ "Database" ],
-        "summary" : "Get namespaces",
-        "description" : "Retrieve the namespaces stored in the database",
-        "operationId" : "getNamespaces",
-        "parameters" : [ {
-          "$ref" : "#/components/parameters/db"
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "A JSON object listing the prefixes and IRIs of the stored namespaces",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/JSON_NAMESPACES"
-                }
-              }
-            }
-          },
-          "404" : {
-            "description" : "Database does not exist"
-          }
-        }
-      },
-      "post" : {
-        "tags" : [ "Database" ],
-        "summary" : "Import namespaces",
-        "description" : "Add namespaces to the database via a block or blocks of RDF that declares them",
-        "operationId" : "importNamespaces",
-        "parameters" : [ {
-          "$ref" : "#/components/parameters/db"
-        } ],
-        "requestBody" : {
-          "content" : {
-            "text/turtle" : {
-              "examples" : {
-                "GENERIC_TURTLE" : {
-                  "description" : "GENERIC_TURTLE",
-                  "$ref" : "#/components/examples/GENERIC_TURTLE"
+        ],
+        "requestBody": {
+          "content": {
+            "application/sparql-update": {
+              "examples": {
+                "SPARQL_UPDATE": {
+                  "description": "SPARQL_UPDATE",
+                  "$ref": "#/components/examples/SPARQL_UPDATE"
                 }
               }
             },
-            "application/trig" : {
-              "examples" : {
-                "GENERIC_TRIG" : {
-                  "description" : "GENERIC_TRIG",
-                  "$ref" : "#/components/examples/GENERIC_TRIG"
-                }
-              }
-            },
-            "application/rdf+xml" : {
-              "examples" : {
-                "GENERIC_RDFXML" : {
-                  "description" : "GENERIC_RDFXML",
-                  "$ref" : "#/components/examples/GENERIC_RDFXML"
-                }
-              }
-            },
-            "application/n-triples" : {
-              "examples" : {
-                "GENERIC_NTRIPLES" : {
-                  "description" : "GENERIC_NTRIPLES",
-                  "$ref" : "#/components/examples/GENERIC_NTRIPLES"
-                }
-              }
-            },
-            "application/n-quads" : {
-              "examples" : {
-                "GENERIC_NQUADS" : {
-                  "description" : "GENERIC_NQUADS",
-                  "$ref" : "#/components/examples/GENERIC_NQUADS"
-                }
-              }
-            },
-            "application/ld+json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/GENERIC_JSONLD"
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/SPARQL_QUERY"
               }
             }
           },
-          "required" : true
+          "required": true
         },
-        "responses" : {
-          "200" : {
-            "description" : "A JSON object listing the prefixes and IRIs of the stored namespaces",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/JSON_NAMESPACES"
+        "responses": {
+          "200": {
+            "description": "Update query succeeded"
+          },
+          "400": {
+            "description": "Invalid query sent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GENERIC_RESPONSE_ERROR_MESSAGE"
                 }
               }
             }
-          },
-          "404" : {
-            "description" : "Database does not exist"
           }
         }
       }
     }
   },
-  "components" : {
-    "schemas" : {
-      "GENERIC_RESPONSE_MESSAGE" : {
-        "properties" : {
-          "message" : {
-            "type" : "string",
-            "example" : "Successfully executed request"
+  "components": {
+    "schemas": {
+      "GENERIC_RESPONSE_MESSAGE": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Successfully executed request"
           }
         }
       },
-      "GENERIC_JSONLD" : {
-        "properties" : {
-          "@id" : {
-            "type" : "string",
-            "example" : "urn:example:Entity1"
+      "GENERIC_RESPONSE_ERROR_MESSAGE": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Unexpected end of file [L9]"
           },
-          "@type" : {
-            "type" : "string",
-            "example" : "urn:example:Entity"
+          "code": {
+            "type": "string",
+            "example": "QIEVR2"
+          }
+        }
+      },
+      "GENERIC_JSONLD": {
+        "properties": {
+          "@id": {
+            "type": "string",
+            "example": "urn:example:Entity1"
           },
-          "urn:example:hasProp" : {
-            "required" : [ "@id" ],
-            "type" : "array",
-            "items" : {
-              "properties" : {
-                "@type" : {
-                  "type" : "string",
-                  "example" : "http://www.w3.org/2001/XMLSchema#integer"
+          "@type": {
+            "type": "string",
+            "example": "urn:example:Entity"
+          },
+          "urn:example:hasProp": {
+            "required": [
+              "@id"
+            ],
+            "type": "array",
+            "items": {
+              "properties": {
+                "@type": {
+                  "type": "string",
+                  "example": "http://www.w3.org/2001/XMLSchema#integer"
                 },
-                "@value" : {
-                  "type" : "string",
-                  "example" : "42"
+                "@value": {
+                  "type": "string",
+                  "example": "42"
                 }
               }
             }
           }
         }
       },
-      "GENERIC_JSONLD_OBF" : {
-        "properties" : {
-          "@id" : {
-            "type" : "string",
-            "example" : "tag:stardog:api:obf:b55b5d6354699b339940e8be603eb75c220e3110eb1d4143ffd6d3abd5679154"
+      "GENERIC_JSONLD_OBF": {
+        "properties": {
+          "@id": {
+            "type": "string",
+            "example": "tag:stardog:api:obf:b55b5d6354699b339940e8be603eb75c220e3110eb1d4143ffd6d3abd5679154"
           },
-          "@type" : {
-            "type" : "string",
-            "example" : "tag:stardog:api:obf:9f8e6dca5e5e240793e4ebf3c3a8b23f3654018b38457dbb58a6ba802a120a42"
+          "@type": {
+            "type": "string",
+            "example": "tag:stardog:api:obf:9f8e6dca5e5e240793e4ebf3c3a8b23f3654018b38457dbb58a6ba802a120a42"
           },
-          "tag:stardog:api:obf:223ca9493ab57efa04fdc9b245cb86c22d00c88cf6de8f99135f78d06fd10fab" : {
-            "required" : [ "@id" ],
-            "type" : "array",
-            "items" : {
-              "properties" : {
-                "@type" : {
-                  "type" : "string",
-                  "example" : "tag:stardog:api:obf:d00c88d06fd10fa223ca9493ab57efa04fdc9b245cb86c22b8cf6de8f99135f7"
+          "tag:stardog:api:obf:223ca9493ab57efa04fdc9b245cb86c22d00c88cf6de8f99135f78d06fd10fab": {
+            "type": "array",
+            "items": {
+              "properties": {
+                "@type": {
+                  "type": "string",
+                  "example": "tag:stardog:api:obf:d00c88d06fd10fa223ca9493ab57efa04fdc9b245cb86c22b8cf6de8f99135f7"
                 },
-                "@value" : {
-                  "type" : "string",
-                  "example" : "c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f2"
+                "@value": {
+                  "type": "string",
+                  "example": "c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f2"
                 }
               }
             }
           }
         }
       },
-      "JSON_NAMESPACES" : {
-        "required" : [ "namespaces" ],
-        "properties" : {
-          "namespaces" : {
-            "type" : "array",
-            "items" : {
-              "required" : [ "prefix", "name" ],
-              "properties" : {
-                "prefix" : {
-                  "type" : "string",
-                  "example" : "rdfs"
+      "JSON_NAMESPACES": {
+        "required": [
+          "namespaces"
+        ],
+        "properties": {
+          "namespaces": {
+            "type": "array",
+            "items": {
+              "required": [
+                "prefix",
+                "name"
+              ],
+              "properties": {
+                "prefix": {
+                  "type": "string",
+                  "example": "rdfs"
                 },
-                "name" : {
-                  "type" : "string",
-                  "example" : "http://www.w3.org/2000/01/rdf-schema#"
+                "name": {
+                  "type": "string",
+                  "example": "http://www.w3.org/2000/01/rdf-schema#"
                 }
               }
             }
           }
         }
       },
-      "JSON_CONFIG_PROPERTIES" : {
-        "minProperties" : 1,
-        "type" : "object",
-        "properties" : {
-          "option.name.here" : {
-            "properties" : {
-              "name" : {
-                "type" : "string",
-                "example" : "reasoning.sameas"
-              },
-              "type" : {
-                "type" : "string",
-                "example" : "Enum"
-              },
-              "mutable" : {
-                "type" : "boolean"
-              },
-              "mutableWhileOnline" : {
-                "type" : "boolean",
-                "description" : "Can be changed while the database is online"
-              },
-              "category" : {
-                "type" : "string",
-                "example" : "Reasoning"
-              },
-              "label" : {
-                "type" : "string",
-                "example" : "SameAs"
-              },
-              "description" : {
-                "type" : "string",
-                "example" : "Option to enable owl:sameAs reasoning. When this option is set to ON reflexive, symmetric, and transitive closure of the owl:sameAs triples in the database is computed. When it is set to FULL, owl:sameAs inferences are computed based on the schema axioms such as functional properties"
-              },
-              "possibleValues" : {
-                "type" : "array",
-                "example" : [ "OFF", "ON", "FULL" ],
-                "items" : {
-                  "type" : "string"
-                }
-              },
-              "defaultValue" : {
-                "type" : "string",
-                "example" : "OFF"
+      "JSON_CONFIG_PROPERTIES": {
+        "minProperties": 1,
+        "additionalProperties": {
+          "properties": {
+            "name": {
+              "type": "string",
+              "example": "reasoning.sameas"
+            },
+            "type": {
+              "type": "string",
+              "example": "Enum"
+            },
+            "mutable": {
+              "type": "boolean"
+            },
+            "mutableWhileOnline": {
+              "type": "boolean",
+              "description": "Can be changed while the database is online"
+            },
+            "category": {
+              "type": "string",
+              "example": "Reasoning"
+            },
+            "label": {
+              "type": "string",
+              "example": "SameAs"
+            },
+            "description": {
+              "type": "string",
+              "example": "Option to enable owl:sameAs reasoning. When this option is set to ON reflexive, symmetric, and transitive closure of the owl:sameAs triples in the database is computed. When it is set to FULL, owl:sameAs inferences are computed based on the schema axioms such as functional properties"
+            },
+            "possibleValues": {
+              "type": "array",
+              "example": [
+                "OFF",
+                "ON",
+                "FULL"
+              ],
+              "items": {
+                "type": "string"
               }
+            },
+            "defaultValue": {
+              "type": "string",
+              "example": "OFF"
             }
           }
         }
       },
-      "DB_OFFLINE_ONLINE" : {
-        "required" : [ "timeout" ],
-        "properties" : {
-          "timeout" : {
-            "type" : "integer",
-            "example" : 5000
+      "DB_OFFLINE_ONLINE": {
+        "required": [
+          "timeout"
+        ],
+        "properties": {
+          "timeout": {
+            "type": "integer",
+            "description": "timeout in ms"
           }
         }
       },
-      "DB_CREATE" : {
-        "required" : [ "root" ],
-        "properties" : {
-          "root" : {
-            "required" : [ "dbname", "options", "files" ],
-            "type" : "object",
-            "properties" : {
-              "dbname" : {
-                "type" : "string",
-                "example" : "myDb"
+      "DB_CREATE": {
+        "required": [
+          "root"
+        ],
+        "properties": {
+          "root": {
+            "required": [
+              "dbname",
+              "options",
+              "files"
+            ],
+            "properties": {
+              "dbname": {
+                "type": "string",
+                "example": "myDb"
               },
-              "options" : {
-                "type" : "object"
+              "options": {
+                "type": "object"
               },
-              "files" : {
-                "type" : "array",
-                "items" : {
-                  "required" : [ "filename" ],
-                  "type" : "object",
-                  "properties" : {
-                    "filename" : {
-                      "type" : "string",
-                      "example" : "fileX.ttl"
+              "files": {
+                "type": "array",
+                "items": {
+                  "required": [
+                    "filename"
+                  ],
+                  "properties": {
+                    "filename": {
+                      "type": "string",
+                      "example": "fileX.ttl"
                     },
-                    "context" : {
-                      "type" : "string",
-                      "example" : "urn:my:graph"
+                    "context": {
+                      "type": "string",
+                      "example": "urn:my:graph"
                     }
                   }
                 }
               }
             },
-            "example" : "{\"dbName\": \"myDb\", \"options\": {}, \"files\": [ {\"filename\": \"file1.ttl\"} ] }"
+            "example": "{\"dbname\": \"myDb\", \"options\": {}, \"files\": [ {\"filename\": \"file1.ttl\"} ] }"
           }
         },
-        "additionalProperties" : {
-          "type" : "string",
-          "format" : "binary"
+        "additionalProperties": {
+          "type": "string",
+          "format": "binary"
         }
-      }
-    },
-    "responses" : {
-      "GENERIC_RESPONSE_MESSAGE" : {
-        "content" : {
-          "application/json" : {
-            "schema" : {
-              "$ref" : "#/components/schemas/GENERIC_RESPONSE_MESSAGE"
-            }
+      },
+      "COMMIT_RESULT": {
+        "required": [
+          "added",
+          "removed"
+        ],
+        "properties": {
+          "added": {
+            "type": "integer",
+            "description": "Approximate number of triples added",
+            "example": 42
+          },
+          "removed": {
+            "type": "integer",
+            "description": "Approximate number of triples removed",
+            "example": 29
           }
         }
       },
-      "DB_TX_404" : {
-        "headers" : {
-          "SD-Error-Code" : {
-            "schema" : {
-              "type" : "string"
-            },
-            "examples" : {
-              "5" : {
-                "description" : "Transaction not found",
-                "value" : "Transaction not found",
-                "externalValue" : "Transaction not found"
-              },
-              "6" : {
-                "description" : "Database not found",
-                "value" : "Database not found",
-                "externalValue" : "Database not found"
+      "TRANSACTION": {
+        "required": [
+          "id",
+          "db",
+          "user",
+          "startTime"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "UUID",
+            "example": "4ea1ebac-48f0-459c-a9a7-6cad7189403d"
+          },
+          "db": {
+            "type": "string",
+            "example": "myDb"
+          },
+          "user": {
+            "type": "string",
+            "example": "admin"
+          },
+          "startTime": {
+            "type": "long",
+            "description": "Unix timestamp when transaction started",
+            "example": 1579812754096
+          }
+        }
+      },
+      "SPARQL_QUERY": {
+        "required": [
+          "query"
+        ],
+        "properties": {
+          "query": {
+            "type": "string",
+            "example": "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\nPREFIX : <http://example.org/stardog#>\n \nSELECT ?s ?label WHERE {\n    ?s a :Example ;\n       rdfs:label ?label\n}"
+          },
+          "reasoning": {
+            "type": "boolean",
+            "description": "Enable Reasoning"
+          }
+        }
+      },
+      "SPARQL_RESULTS_JSON": {
+        "required": [
+          "head",
+          "results"
+        ],
+        "properties": {
+          "head": {
+            "required": [
+              "vars"
+            ],
+            "properties": {
+              "vars": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "results": {
+            "required": [
+              "bindings"
+            ],
+            "properties": {
+              "bindings": {
+                "type": "array",
+                "items": {
+                  "additionalProperties": {
+                    "required": [
+                      "type",
+                      "value"
+                    ],
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "example": "literal"
+                      },
+                      "value": {
+                        "type": "string",
+                        "example": "42"
+                      }
+                    }
+                  }
+                }
               }
             }
           }
         }
+      },
+      "QUERY_PLAN_JSON": {
+        "required": [
+          "prefixes",
+          "dataset",
+          "plan"
+        ],
+        "properties": {
+          "prefixes": {
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "dataset": {
+            "type": "object"
+          },
+          "plan": {
+            "$ref": "#/components/schemas/PLAN_NODE"
+          }
+        }
+      },
+      "PLAN_NODE": {
+        "properties": {
+          "label": {
+            "type": "string",
+            "example": "MergeJoin(?s)"
+          },
+          "cardinality": {
+            "type": "integer",
+            "example": 42
+          },
+          "children": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PLAN_NODE"
+            }
+          }
+        }
       }
     },
-    "parameters" : {
-      "db" : {
-        "name" : "db",
-        "in" : "path",
-        "description" : "Database name",
-        "required" : true,
-        "schema" : {
-          "type" : "string"
-        },
-        "example" : "myDb"
+    "responses": {
+      "EMPTY_SUCCESS": {
+        "description": "Operation successful"
       },
-      "txid" : {
-        "name" : "txid",
-        "in" : "path",
-        "description" : "Transaction ID",
-        "required" : true,
-        "schema" : {
-          "type" : "string"
-        },
-        "example" : "ad667b82-76af-44de-ac2f-2197dbadb274"
+      "GENERIC_RESPONSE_MESSAGE": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/GENERIC_RESPONSE_MESSAGE"
+            }
+          }
+        }
+      },
+      "GENERIC_RESPONSE_ERROR_MESSAGE": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/GENERIC_RESPONSE_ERROR_MESSAGE"
+            }
+          }
+        }
+      },
+      "DB_TX_404": {
+        "description": "Database/Transaction not found (See SD-Error-Code)",
+        "headers": {
+          "SD-Error-Code": {
+            "description": "5 - Transaction Not Found  \n6 - Database Not Found",
+            "schema": {
+              "type": "integer",
+              "example": 42
+            }
+          }
+        }
       }
     },
-    "examples" : {
-      "GENERIC_TURTLE" : {
-        "value" : "@prefix : <urn:example:> .\n@prefix owl: <http://www.w3.org/2002/07/owl#> .\n@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .\n@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n@prefix stardog: <tag:stardog:api:> .\n@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .\n\n<urn:example:Entity1> a <urn:example:Entity> ;\n\t<urn:example:hasProp> 42 ."
+    "parameters": {
+      "db": {
+        "name": "db",
+        "in": "path",
+        "description": "Database name",
+        "required": true,
+        "schema": {
+          "type": "string"
+        },
+        "example": "myDb"
       },
-      "GENERIC_TURTLE_OBF" : {
-        "value" : "@prefix : <http://api.stardog.com/> .\n@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .\n@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .\n@prefix owl: <http://www.w3.org/2002/07/owl#> .\n@prefix stardog: <tag:stardog:api:> .\n\n<tag:stardog:api:obf:b55b5d6354699b339940e8be603eb75c220e3110eb1d4143ffd6d3abd5679154> a <tag:stardog:api:obf:9f8e6dca5e5e240793e4ebf3c3a8b23f3654018b38457dbb58a6ba802a120a42> ;\n   <tag:stardog:api:obf:d00c88d06fd10fa223ca9493ab57efa04fdc9b245cb86c22b8cf6de8f99135f7> \"c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f2\" ."
+      "txid": {
+        "name": "txid",
+        "in": "path",
+        "description": "Transaction ID",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "UUID",
+          "example": "4ea1ebac-48f0-459c-a9a7-6cad7189403d"
+        }
       },
-      "GENERIC_TRIG" : {
-        "value" : "@prefix : <urn:example:> .\n@prefix owl: <http://www.w3.org/2002/07/owl#> .\n@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .\n@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n@prefix stardog: <tag:stardog:api:> .\n@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .\n\n{ \t<urn:example:Entity1> a <urn:example:Entity> ;\n\t\t <urn:example:hasProp> 42 .\n}"
+      "graph-uri": {
+        "name": "graph-uri",
+        "in": "query",
+        "description": "Named Graph / Context",
+        "required": false,
+        "schema": {
+          "type": "string",
+          "format": "URI"
+        },
+        "example": "https://stardog.com/graphs/myGraph"
       },
-      "GENERIC_TRIG_OBF" : {
-        "value" : "@prefix : <http://api.stardog.com/> .\n@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .\n@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .\n@prefix owl: <http://www.w3.org/2002/07/owl#> .\n@prefix stardog: <tag:stardog:api:> .\n\n{\n    <tag:stardog:api:obf:b55b5d6354699b339940e8be603eb75c220e3110eb1d4143ffd6d3abd5679154> a <tag:stardog:api:obf:9f8e6dca5e5e240793e4ebf3c3a8b23f3654018b38457dbb58a6ba802a120a42> ;\n      <tag:stardog:api:obf:d00c88d06fd10fa223ca9493ab57efa04fdc9b245cb86c22b8cf6de8f99135f7> \"c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f2\" .\n}"
+      "reasoning": {
+        "name": "reasoning",
+        "in": "query",
+        "description": "Enable Reasoning",
+        "schema": {
+          "type": "boolean"
+        }
       },
-      "GENERIC_NTRIPLES" : {
-        "value" : "<urn:example:Entity1> a <urn:example:Entity> .\n<urn:example:Entity1> <urn:example:hasProp> 42 ."
+      "query": {
+        "name": "query",
+        "in": "query",
+        "description": "SPARQL query to run",
+        "required": true,
+        "schema": {
+          "type": "string"
+        }
+      }
+    },
+    "examples": {
+      "GENERIC_TURTLE": {
+        "value": "@prefix : <urn:example:> .\n@prefix owl: <http://www.w3.org/2002/07/owl#> .\n@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .\n@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n@prefix stardog: <tag:stardog:api:> .\n@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .\n\n<urn:example:Entity1> a <urn:example:Entity> ;\n\t<urn:example:hasProp> 42 ."
       },
-      "GENERIC_NTRIPLES_OBF" : {
-        "value" : "<tag:stardog:api:obf:b55b5d6354699b339940e8be603eb75c220e3110eb1d4143ffd6d3abd5679154> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <tag:stardog:api:obf:9f8e6dca5e5e240793e4ebf3c3a8b23f3654018b38457dbb58a6ba802a120a42> .\n<tag:stardog:api:obf:b55b5d6354699b339940e8be603eb75c220e3110eb1d4143ffd6d3abd5679154> <tag:stardog:api:obf:d00c88d06fd10fa223ca9493ab57efa04fdc9b245cb86c22b8cf6de8f99135f7> \"c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f2\" ."
+      "GENERIC_TURTLE_OBF": {
+        "value": "@prefix : <http://api.stardog.com/> .\n@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .\n@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .\n@prefix owl: <http://www.w3.org/2002/07/owl#> .\n@prefix stardog: <tag:stardog:api:> .\n\n<tag:stardog:api:obf:b55b5d6354699b339940e8be603eb75c220e3110eb1d4143ffd6d3abd5679154> a <tag:stardog:api:obf:9f8e6dca5e5e240793e4ebf3c3a8b23f3654018b38457dbb58a6ba802a120a42> ;\n   <tag:stardog:api:obf:d00c88d06fd10fa223ca9493ab57efa04fdc9b245cb86c22b8cf6de8f99135f7> \"c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f2\" ."
       },
-      "GENERIC_NQUADS" : {
-        "value" : "<urn:context> <urn:example:Entity1> a <urn:example:Entity> .\n<urn:context> <urn:example:Entity1> <urn:example:hasProp> 42 ."
+      "GENERIC_TRIG": {
+        "value": "@prefix : <urn:example:> .\n@prefix owl: <http://www.w3.org/2002/07/owl#> .\n@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .\n@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n@prefix stardog: <tag:stardog:api:> .\n@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .\n\n{ \t<urn:example:Entity1> a <urn:example:Entity> ;\n\t\t <urn:example:hasProp> 42 .\n}"
       },
-      "GENERIC_NQUADS_OBF" : {
-        "value" : "<tag:stardog:api:obf:e603eb75c220e3110eb1d4143ffd6d3abd5679154b55b5d6354699b339940e8b> <tag:stardog:api:obf:b55b5d6354699b339940e8be603eb75c220e3110eb1d4143ffd6d3abd5679154> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <tag:stardog:api:obf:9f8e6dca5e5e240793e4ebf3c3a8b23f3654018b38457dbb58a6ba802a120a42> .\n<tag:stardog:api:obf:e603eb75c220e3110eb1d4143ffd6d3abd5679154b55b5d6354699b339940e8b> <tag:stardog:api:obf:b55b5d6354699b339940e8be603eb75c220e3110eb1d4143ffd6d3abd5679154> <tag:stardog:api:obf:d00c88d06fd10fa223ca9493ab57efa04fdc9b245cb86c22b8cf6de8f99135f7> \"c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f2\" ."
+      "GENERIC_TRIG_OBF": {
+        "value": "@prefix : <http://api.stardog.com/> .\n@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .\n@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .\n@prefix owl: <http://www.w3.org/2002/07/owl#> .\n@prefix stardog: <tag:stardog:api:> .\n\n{\n    <tag:stardog:api:obf:b55b5d6354699b339940e8be603eb75c220e3110eb1d4143ffd6d3abd5679154> a <tag:stardog:api:obf:9f8e6dca5e5e240793e4ebf3c3a8b23f3654018b38457dbb58a6ba802a120a42> ;\n      <tag:stardog:api:obf:d00c88d06fd10fa223ca9493ab57efa04fdc9b245cb86c22b8cf6de8f99135f7> \"c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f2\" .\n}"
       },
-      "GENERIC_RDFXML" : {
-        "value" : "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<rdf:RDF\n\txmlns=\"http://api.stardog.com/\"\n\txmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"\n\txmlns:owl=\"http://www.w3.org/2002/07/owl#\"\n\txmlns:rdfs=\"http://www.w3.org/2000/01/rdf-schema#\"\n\txmlns:stardog=\"tag:stardog:api:\"\n\txmlns:xsd=\"http://www.w3.org/2001/XMLSchema#\">\n\n<rdf:Description rdf:about=\"urn:example:Entity1\">\n\t<rdf:type rdf:resource=\"urn:example:Entity\"/>\n\t<hasProp xmlns=\"urn:example:\" rdf:datatype=\"http://www.w3.org/2001/XMLSchema#integer\">42</hasProp>\n</rdf:Description>\n\n</rdf:RDF>"
+      "GENERIC_NTRIPLES": {
+        "value": "<urn:example:Entity1> a <urn:example:Entity> .\n<urn:example:Entity1> <urn:example:hasProp> 42 ."
       },
-      "GENERIC_RDFXML_OBF" : {
-        "value" : "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<rdf:RDF\n\txmlns=\"http://api.stardog.com/\"\n\txmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"\n\txmlns:owl=\"http://www.w3.org/2002/07/owl#\"\n\txmlns:rdfs=\"http://www.w3.org/2000/01/rdf-schema#\"\n\txmlns:stardog=\"tag:stardog:api:\"\n\txmlns:xsd=\"http://www.w3.org/2001/XMLSchema#\">\n\n<rdf:Description rdf:about=\"tag:stardog:api:obf:b55b5d6354699b339940e8be603eb75c220e3110eb1d4143ffd6d3abd5679154\">\n\t<rdf:type rdf:resource=\"tag:stardog:api:obf:9f8e6dca5e5e240793e4ebf3c3a8b23f3654018b38457dbb58a6ba802a120a42\"/>\n\t<d00c88d06fd10fa223ca9493ab57efa04fdc9b245cb86c22b8cf6de8f99135f7 xmlns=\"tag:stardog:api:obf:\" rdf:datatype=\"http://www.w3.org/2001/XMLSchema#string\">c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f2</d00c88d06fd10fa223ca9493ab57efa04fdc9b245cb86c22b8cf6de8f99135f7>\n</rdf:Description>\n\n</rdf:RDF>"
+      "GENERIC_NTRIPLES_OBF": {
+        "value": "<tag:stardog:api:obf:b55b5d6354699b339940e8be603eb75c220e3110eb1d4143ffd6d3abd5679154> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <tag:stardog:api:obf:9f8e6dca5e5e240793e4ebf3c3a8b23f3654018b38457dbb58a6ba802a120a42> .\n<tag:stardog:api:obf:b55b5d6354699b339940e8be603eb75c220e3110eb1d4143ffd6d3abd5679154> <tag:stardog:api:obf:d00c88d06fd10fa223ca9493ab57efa04fdc9b245cb86c22b8cf6de8f99135f7> \"c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f2\" ."
+      },
+      "GENERIC_NQUADS": {
+        "value": "<urn:context> <urn:example:Entity1> a <urn:example:Entity> .\n<urn:context> <urn:example:Entity1> <urn:example:hasProp> 42 ."
+      },
+      "GENERIC_NQUADS_OBF": {
+        "value": "<tag:stardog:api:obf:e603eb75c220e3110eb1d4143ffd6d3abd5679154b55b5d6354699b339940e8b> <tag:stardog:api:obf:b55b5d6354699b339940e8be603eb75c220e3110eb1d4143ffd6d3abd5679154> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <tag:stardog:api:obf:9f8e6dca5e5e240793e4ebf3c3a8b23f3654018b38457dbb58a6ba802a120a42> .\n<tag:stardog:api:obf:e603eb75c220e3110eb1d4143ffd6d3abd5679154b55b5d6354699b339940e8b> <tag:stardog:api:obf:b55b5d6354699b339940e8be603eb75c220e3110eb1d4143ffd6d3abd5679154> <tag:stardog:api:obf:d00c88d06fd10fa223ca9493ab57efa04fdc9b245cb86c22b8cf6de8f99135f7> \"c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f2\" ."
+      },
+      "GENERIC_RDFXML": {
+        "value": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<rdf:RDF\n\txmlns=\"http://api.stardog.com/\"\n\txmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"\n\txmlns:owl=\"http://www.w3.org/2002/07/owl#\"\n\txmlns:rdfs=\"http://www.w3.org/2000/01/rdf-schema#\"\n\txmlns:stardog=\"tag:stardog:api:\"\n\txmlns:xsd=\"http://www.w3.org/2001/XMLSchema#\">\n\n<rdf:Description rdf:about=\"urn:example:Entity1\">\n\t<rdf:type rdf:resource=\"urn:example:Entity\"/>\n\t<hasProp xmlns=\"urn:example:\" rdf:datatype=\"http://www.w3.org/2001/XMLSchema#integer\">42</hasProp>\n</rdf:Description>\n\n</rdf:RDF>"
+      },
+      "GENERIC_RDFXML_OBF": {
+        "value": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<rdf:RDF\n\txmlns=\"http://api.stardog.com/\"\n\txmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"\n\txmlns:owl=\"http://www.w3.org/2002/07/owl#\"\n\txmlns:rdfs=\"http://www.w3.org/2000/01/rdf-schema#\"\n\txmlns:stardog=\"tag:stardog:api:\"\n\txmlns:xsd=\"http://www.w3.org/2001/XMLSchema#\">\n\n<rdf:Description rdf:about=\"tag:stardog:api:obf:b55b5d6354699b339940e8be603eb75c220e3110eb1d4143ffd6d3abd5679154\">\n\t<rdf:type rdf:resource=\"tag:stardog:api:obf:9f8e6dca5e5e240793e4ebf3c3a8b23f3654018b38457dbb58a6ba802a120a42\"/>\n\t<d00c88d06fd10fa223ca9493ab57efa04fdc9b245cb86c22b8cf6de8f99135f7 xmlns=\"tag:stardog:api:obf:\" rdf:datatype=\"http://www.w3.org/2001/XMLSchema#string\">c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f2</d00c88d06fd10fa223ca9493ab57efa04fdc9b245cb86c22b8cf6de8f99135f7>\n</rdf:Description>\n\n</rdf:RDF>"
+      },
+      "SPARQL_QUERY": {
+        "value": "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\nPREFIX : <http://example.org/stardog#>\n \nSELECT ?s ?label WHERE {\n    ?s a :Example ;\n       rdfs:label ?label\n}"
+      },
+      "SPARQL_UPDATE": {
+        "value": "PREFIX : <http://example.org/stardog#>\n\nDELETE {\n   ?s a :OldType\n}\nINSERT {\n   ?s a :NewType\n}\nWHERE {\n   ?s a :OldType\n}"
+      },
+      "SPARQL_RESULTS_XML": {
+        "value": "<?xml version='1.0' encoding='UTF-8'?>\n<sparql xmlns='http://www.w3.org/2005/sparql-results#'>\n    <head>\n        <variable name='s'/>\n        <variable name='label'/>\n    </head>\n    <results>\n        <result>\n            <binding name='s'>\n                <uri>http://example.org/stardog#Example1</uri>\n            </binding>\n            <binding name='label'>\n                <literal>42</literal>\n            </binding>\n        </result>\n        <result>\n            <binding name='s'>\n                <uri>http://example.org/stardog#Example2</uri>\n            </binding>\n            <binding name='label'>\n                <literal>foo</literal>\n            </binding>\n        </result>\n    </results>\n</sparql>"
+      },
+      "SPARQL_RESULTS_CSV": {
+        "value": "s,label\nhttp://example.org/stardog#Example1,42\nhttp://example.org/stardog#Example2,foo"
+      },
+      "SPARQL_RESULTS_TSV": {
+        "value": "?s\t?label\n<http://example.org/stardog#Example1>\t\"42\"\n<http://example.org/stardog#Example2>\t\"foo\""
+      },
+      "QUERY_PLAN_TEST": {
+        "value": "prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>\nprefix : <http://example.org/stardog#>\n\nProjection(?s, ?label) [#625]\n`─ MergeJoin(?s) [#625]\n   +─ Scan[POSC](?s, <http://www.w3.org/1999/02/22-rdf-syntax-ns#type>, :Example) [#1]\n   `─ Scan[PSOC](?s, rdfs:label, ?label) [#718K]"
       }
     }
   }
