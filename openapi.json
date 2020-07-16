@@ -14,8 +14,8 @@
       "description": "Server administration operations. May require superuser permissions"
     },
     {
-      "name": "Database",
-      "description": "Database operations"
+      "name": "DB Admin",
+      "description": "Database administration operations"
     },
     {
       "name": "Transactions",
@@ -28,6 +28,30 @@
     {
       "name": "SPARQL",
       "description": "SPARQL Queries"
+    },
+    {
+      "name": "Server Status/Metrics",
+      "description": ""
+    },
+    {
+      "name": "Users",
+      "description": "Operations on system users"
+    },
+    {
+      "name": "Roles",
+      "description": "Operations on system roles"
+    },
+    {
+      "name": "Permissions",
+      "description": "Operations on system permissions"
+    },
+    {
+      "name": "Queries",
+      "description": "Operations relating to queries running on the server"
+    },
+    {
+      "name": "Stored Functions",
+      "description": "Operations relating to user-defined functions stored on the server"
     }
   ],
   "paths": {
@@ -84,7 +108,7 @@
     "/{db}/namespaces": {
       "get": {
         "tags": [
-          "Database"
+          "DB Admin"
         ],
         "summary": "Get namespaces",
         "description": "Retrieve the namespaces stored in the database",
@@ -112,7 +136,7 @@
       },
       "post": {
         "tags": [
-          "Database"
+          "DB Admin"
         ],
         "summary": "Import namespaces",
         "description": "Add namespaces to the database via a block or blocks of RDF that declares them",
@@ -189,10 +213,47 @@
         }
       }
     },
+    "/{db}/size": {
+      "get": {
+        "tags": [
+          "DB Admin"
+        ],
+        "summary": "Get DB Size",
+        "operationId": "size",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/db"
+          },
+          {
+            "name": "exact",
+            "in": "query",
+            "description": "Whether to request that the database size be exact instead of approximate",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The size (in triples) of the database",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Database does not exist"
+          }
+        }
+      }
+    },
     "/{db}/export": {
       "get": {
         "tags": [
-          "Database"
+          "DB Admin"
         ],
         "summary": "Export database",
         "operationId": "export",
@@ -267,7 +328,7 @@
       },
       "post": {
         "tags": [
-          "Database"
+          "DB Admin"
         ],
         "summary": "Export database (obfuscated)",
         "operationId": "exportObfuscated",
@@ -345,7 +406,7 @@
     "/{db}/model": {
       "get": {
         "tags": [
-          "Database"
+          "DB Admin"
         ],
         "summary": "Generate Model",
         "description": "Generate the reasoning model used by this database in various formats",
@@ -423,72 +484,10 @@
         }
       }
     },
-    "/{db}/size": {
-      "get": {
-        "tags": [
-          "Database"
-        ],
-        "summary": "Get DB Size",
-        "operationId": "size",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/db"
-          },
-          {
-            "name": "exact",
-            "in": "query",
-            "description": "Whether to request that the database size be exact instead of approximate",
-            "schema": {
-              "type": "boolean"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "The size (in triples) of the database",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "type": "integer"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Database does not exist"
-          }
-        }
-      }
-    },
-    "/admin/databases/backup_all": {
-      "put": {
-        "tags": [
-          "Database"
-        ],
-        "summary": "Backup all databases",
-        "description": "Create a backup of all databases on the server",
-        "operationId": "backupAll",
-        "parameters": [
-          {
-            "name": "to",
-            "in": "query",
-            "description": "File location on the server to which to save the backups (defaults to $STARDOG_HOME/.backup)",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "$ref": "#/components/responses/GENERIC_RESPONSE_MESSAGE"
-          }
-        }
-      }
-    },
     "/admin/databases": {
       "get": {
         "tags": [
-          "Database"
+          "DB Admin"
         ],
         "summary": "List databases",
         "description": "List all the databases in the server",
@@ -511,7 +510,7 @@
       },
       "post": {
         "tags": [
-          "Database"
+          "DB Admin"
         ],
         "summary": "Create database",
         "description": "Add a new database to the server, optionally with RDF bulk-loaded",
@@ -529,142 +528,9 @@
         "responses": {
           "201": {
             "description": "Database created"
-          }
-        }
-      }
-    },
-    "/admin/databases/{db}/online": {
-      "put": {
-        "tags": [
-          "Database"
-        ],
-        "summary": "Online database",
-        "description": "Bring a database online",
-        "operationId": "online",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/db"
-          }
-        ],
-        "requestBody": {
-          "description": "Configuration parameters",
-          "content": {
-            "application/json": {
-              "example": {
-                "timeout": 5000
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "$ref": "#/components/responses/GENERIC_RESPONSE_MESSAGE"
           },
           "400": {
             "description": "Invalid or malformed request body"
-          },
-          "404": {
-            "description": "Database does not exist"
-          }
-        }
-      }
-    },
-    "/admin/databases/{db}/options": {
-      "get": {
-        "tags": [
-          "Database"
-        ],
-        "summary": "Get all DB options",
-        "description": "Get the value of every metadata option for a database",
-        "operationId": "getAllOptions",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/db"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "JSON object detailing all database metadata",
-            "content": {
-              "application/json": {}
-            }
-          },
-          "404": {
-            "description": "Database does not exist"
-          }
-        }
-      },
-      "put": {
-        "tags": [
-          "Database"
-        ],
-        "summary": "Get DB options",
-        "description": "Get the value of specific metadata options for a database",
-        "operationId": "getOptions",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/db"
-          }
-        ],
-        "requestBody": {
-          "description": "A JSON object with keys equal to the desired metadata options",
-          "content": {
-            "application/json": {
-              "example": {
-                "database.name": null,
-                "preserve.bnode.ids": null
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "JSON object detailing all database metadata",
-            "content": {
-              "application/json": {
-                "example": {
-                  "database.name": "myDb",
-                  "preserve.bnode.ids": true
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Database does not exist"
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "Database"
-        ],
-        "summary": "Set DB options",
-        "description": "Set the value of specific metadata options for a database",
-        "operationId": "setOption",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/db"
-          }
-        ],
-        "requestBody": {
-          "description": "A JSON object with keys and values equal to the desired metadata options",
-          "content": {
-            "application/json": {
-              "example": {
-                "spatial.result.limit": 10000,
-                "query.all.graphs": true
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "$ref": "#/components/responses/GENERIC_RESPONSE_MESSAGE"
-          },
-          "404": {
-            "description": "Database does not exist"
           }
         }
       }
@@ -672,44 +538,14 @@
     "/admin/config_properties": {
       "get": {
         "tags": [
-          "Database"
+          "DB Admin"
         ],
         "summary": "Get all metadata properties",
         "description": "Get information on all database metadata properties, including description and example values",
         "operationId": "getAllMetaProperties",
         "responses": {
           "200": {
-            "description": "JSON object detailing all metadata options",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/JSON_CONFIG_PROPERTIES"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/admin/databases/{db}": {
-      "delete": {
-        "tags": [
-          "Database"
-        ],
-        "summary": "Drop database",
-        "description": "Delete the datbase",
-        "operationId": "dropDatabase",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/db"
-          }
-        ],
-        "responses": {
-          "200": {
-            "$ref": "#/components/responses/GENERIC_RESPONSE_MESSAGE"
-          },
-          "404": {
-            "description": "Database does not exist"
+            "$ref": "#/components/responses/JSON_CONFIG_PROPERTIES"
           }
         }
       }
@@ -717,7 +553,7 @@
     "/admin/restore_all": {
       "put": {
         "tags": [
-          "Database"
+          "DB Admin"
         ],
         "summary": "Restore multiple databases",
         "description": "Restore multiple databases from backup",
@@ -743,7 +579,7 @@
     "/admin/databases/{db}/backup": {
       "put": {
         "tags": [
-          "Database"
+          "DB Admin"
         ],
         "summary": "Backup a database",
         "description": "Create a backup of a database on the server",
@@ -771,101 +607,10 @@
         }
       }
     },
-    "/admin/databases/{db}/optimize": {
-      "put": {
-        "tags": [
-          "Database"
-        ],
-        "summary": "Optimize database",
-        "description": "Optimize the index of a database",
-        "operationId": "optimize",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/db"
-          }
-        ],
-        "requestBody": {
-          "description": "Configuration parameters",
-          "content": {
-            "application/json": {}
-          }
-        },
-        "responses": {
-          "200": {
-            "$ref": "#/components/responses/GENERIC_RESPONSE_MESSAGE"
-          },
-          "400": {
-            "description": "Invalid or malformed request body"
-          },
-          "404": {
-            "description": "Database does not exist"
-          }
-        }
-      }
-    },
-    "/admin/databases/{db}/offline": {
-      "put": {
-        "tags": [
-          "Database"
-        ],
-        "summary": "Offline database",
-        "description": "Take a database offline",
-        "operationId": "offline",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/db"
-          }
-        ],
-        "requestBody": {
-          "description": "Configuration parameters",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/DB_OFFLINE_ONLINE"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "$ref": "#/components/responses/GENERIC_RESPONSE_MESSAGE"
-          },
-          "400": {
-            "description": "Invalid or malformed request body"
-          },
-          "404": {
-            "description": "Database does not exist"
-          }
-        }
-      }
-    },
-    "/admin/databases/{db}/repair": {
-      "put": {
-        "tags": [
-          "Database"
-        ],
-        "summary": "Repair database",
-        "description": "Attempt to recover a corrupted database",
-        "operationId": "repair",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/db"
-          }
-        ],
-        "responses": {
-          "200": {
-            "$ref": "#/components/responses/GENERIC_RESPONSE_MESSAGE"
-          },
-          "404": {
-            "description": "Database does not exist"
-          }
-        }
-      }
-    },
     "/admin/restore": {
       "put": {
         "tags": [
-          "Database"
+          "DB Admin"
         ],
         "summary": "Restore database",
         "description": "Restore a database from backup",
@@ -900,6 +645,259 @@
         "responses": {
           "200": {
             "$ref": "#/components/responses/GENERIC_RESPONSE_MESSAGE"
+          }
+        }
+      }
+    },
+    "/admin/databases/{db}/repair": {
+      "put": {
+        "tags": [
+          "DB Admin"
+        ],
+        "summary": "Repair database",
+        "description": "Attempt to recover a corrupted database",
+        "operationId": "repair",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/db"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/GENERIC_RESPONSE_MESSAGE"
+          },
+          "404": {
+            "description": "Database does not exist"
+          }
+        }
+      }
+    },
+    "/admin/databases/{db}/options": {
+      "get": {
+        "tags": [
+          "DB Admin"
+        ],
+        "summary": "Get all DB options",
+        "description": "Get the value of every metadata option for a database",
+        "operationId": "getAllOptions",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/db"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "JSON object detailing all database metadata",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "404": {
+            "description": "Database does not exist"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "DB Admin"
+        ],
+        "summary": "Get DB options",
+        "description": "Get the value of specific metadata options for a database",
+        "operationId": "getOptions",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/db"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "example": {
+                "spatial.result.limit": null,
+                "query.all.graphs": null
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "spatial.result.limit": 10000,
+                  "query.all.graphs": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Database does not exist"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "DB Admin"
+        ],
+        "summary": "Set DB options",
+        "description": "Set the value of specific metadata options for a database",
+        "operationId": "setOption",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/db"
+          }
+        ],
+        "requestBody": {
+          "description": "A JSON object with keys and values equal to the desired metadata options",
+          "content": {
+            "application/json": {
+              "example": {
+                "spatial.result.limit": 10000,
+                "query.all.graphs": true
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/GENERIC_RESPONSE_MESSAGE"
+          },
+          "404": {
+            "description": "Database does not exist"
+          }
+        }
+      }
+    },
+    "/admin/databases/{db}": {
+      "delete": {
+        "tags": [
+          "DB Admin"
+        ],
+        "summary": "Drop database",
+        "description": "Delete the datbase",
+        "operationId": "dropDatabase",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/db"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/GENERIC_RESPONSE_MESSAGE"
+          },
+          "404": {
+            "description": "Database does not exist"
+          }
+        }
+      }
+    },
+    "/admin/databases/backup_all": {
+      "put": {
+        "tags": [
+          "DB Admin"
+        ],
+        "summary": "Backup all databases",
+        "description": "Create a backup of all databases on the server",
+        "operationId": "backupAll",
+        "parameters": [
+          {
+            "name": "to",
+            "in": "query",
+            "description": "File location on the server to which to save the backups (defaults to $STARDOG_HOME/.backup)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/GENERIC_RESPONSE_MESSAGE"
+          }
+        }
+      }
+    },
+    "/admin/databases/{db}/online": {
+      "put": {
+        "tags": [
+          "DB Admin"
+        ],
+        "summary": "Online database",
+        "description": "Bring a database online",
+        "operationId": "online",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/db"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/GENERIC_RESPONSE_MESSAGE"
+          },
+          "404": {
+            "description": "Database does not exist"
+          }
+        }
+      }
+    },
+    "/admin/databases/{db}/optimize": {
+      "put": {
+        "tags": [
+          "DB Admin"
+        ],
+        "summary": "Optimize database",
+        "description": "Optimize the index of a database",
+        "operationId": "optimize",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/db"
+          }
+        ],
+        "requestBody": {
+          "description": "Configuration parameters",
+          "content": {
+            "application/json": {}
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/GENERIC_RESPONSE_MESSAGE"
+          },
+          "400": {
+            "$ref": "#/components/responses/MALFORMED_REQUEST_400"
+          },
+          "404": {
+            "description": "Database does not exist"
+          }
+        }
+      }
+    },
+    "/admin/databases/{db}/offline": {
+      "put": {
+        "tags": [
+          "DB Admin"
+        ],
+        "summary": "Offline database",
+        "description": "Take a database offline",
+        "operationId": "offline",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/db"
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/DB_OFFLINE_ONLINE"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/GENERIC_RESPONSE_MESSAGE"
+          },
+          "400": {
+            "$ref": "#/components/responses/MALFORMED_REQUEST_400"
+          },
+          "404": {
+            "description": "Database does not exist"
           }
         }
       }
@@ -1595,6 +1593,108 @@
         }
       }
     },
+    "/{db}/explain": {
+      "get": {
+        "tags": [
+          "SPARQL"
+        ],
+        "summary": "Explain SPARQL query",
+        "operationId": "explainQueryGet",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/db"
+          },
+          {
+            "$ref": "#/components/parameters/query"
+          },
+          {
+            "$ref": "#/components/parameters/reasoning"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Query plan",
+            "content": {
+              "text/plain": {
+                "examples": {
+                  "QUERY_PLAN_TEST": {
+                    "description": "QUERY_PLAN_TEST",
+                    "$ref": "#/components/examples/QUERY_PLAN_TEST"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QUERY_PLAN_JSON"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/INVALID_QUERY"
+          },
+          "404": {
+            "description": "Database does not exist"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "SPARQL"
+        ],
+        "summary": "Explain SPARQL query",
+        "operationId": "explainQueryPost",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/db"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/sparql-query": {
+              "examples": {
+                "SPARQL_QUERY": {
+                  "description": "SPARQL_QUERY",
+                  "$ref": "#/components/examples/SPARQL_QUERY"
+                }
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/SPARQL_QUERY"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Query plan",
+            "content": {
+              "text/plain": {
+                "examples": {
+                  "QUERY_PLAN_TEST": {
+                    "description": "QUERY_PLAN_TEST",
+                    "$ref": "#/components/examples/QUERY_PLAN_TEST"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QUERY_PLAN_JSON"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/INVALID_QUERY"
+          },
+          "404": {
+            "description": "Database does not exist"
+          }
+        }
+      }
+    },
     "/{db}/query": {
       "get": {
         "tags": [
@@ -1694,14 +1794,7 @@
             }
           },
           "400": {
-            "description": "Invalid query sent",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/GENERIC_RESPONSE_ERROR_MESSAGE"
-                }
-              }
-            }
+            "$ref": "#/components/responses/INVALID_QUERY"
           },
           "404": {
             "description": "Database does not exist"
@@ -1821,136 +1914,13 @@
             }
           },
           "400": {
-            "description": "Invalid query sent",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/GENERIC_RESPONSE_ERROR_MESSAGE"
-                }
-              }
-            }
+            "$ref": "#/components/responses/INVALID_QUERY"
           },
           "404": {
             "description": "Database does not exist"
           },
           "406": {
             "description": "Accept header invalid for type of query sent"
-          }
-        }
-      }
-    },
-    "/{db}/explain": {
-      "get": {
-        "tags": [
-          "SPARQL"
-        ],
-        "summary": "Explain SPARQL query",
-        "operationId": "explainQueryGet",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/db"
-          },
-          {
-            "$ref": "#/components/parameters/query"
-          },
-          {
-            "$ref": "#/components/parameters/reasoning"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Query plan",
-            "content": {
-              "text/plain": {
-                "examples": {
-                  "QUERY_PLAN_TEST": {
-                    "description": "QUERY_PLAN_TEST",
-                    "$ref": "#/components/examples/QUERY_PLAN_TEST"
-                  }
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/QUERY_PLAN_JSON"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid query sent",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/GENERIC_RESPONSE_ERROR_MESSAGE"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Database does not exist"
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "SPARQL"
-        ],
-        "summary": "Explain SPARQL query",
-        "operationId": "explainQueryPost",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/db"
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/sparql-query": {
-              "examples": {
-                "SPARQL_QUERY": {
-                  "description": "SPARQL_QUERY",
-                  "$ref": "#/components/examples/SPARQL_QUERY"
-                }
-              }
-            },
-            "multipart/form-data": {
-              "schema": {
-                "$ref": "#/components/schemas/SPARQL_QUERY"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Query plan",
-            "content": {
-              "text/plain": {
-                "examples": {
-                  "QUERY_PLAN_TEST": {
-                    "description": "QUERY_PLAN_TEST",
-                    "$ref": "#/components/examples/QUERY_PLAN_TEST"
-                  }
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/QUERY_PLAN_JSON"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid query sent",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/GENERIC_RESPONSE_ERROR_MESSAGE"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Database does not exist"
           }
         }
       }
@@ -2034,11 +2004,1104 @@
           }
         }
       }
+    },
+    "/admin/status/prometheus": {
+      "get": {
+        "tags": [
+          "Server Status/Metrics"
+        ],
+        "summary": "Get Prometheus metrics",
+        "description": "Return metric information from the registry in Prometheus format",
+        "operationId": "prometheus",
+        "responses": {
+          "200": {
+            "description": "Prometheus metrics",
+            "content": {
+              "text/plain": {}
+            }
+          }
+        }
+      }
+    },
+    "/admin/status": {
+      "get": {
+        "tags": [
+          "Server Status/Metrics"
+        ],
+        "summary": "Get Server metrics",
+        "description": "Return metric information from the registry in JSON format",
+        "operationId": "status",
+        "responses": {
+          "200": {
+            "description": "Server metrics",
+            "content": {
+              "application/json": {}
+            }
+          }
+        }
+      }
+    },
+    "/admin/users/{user}/enabled": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "User enabled",
+        "description": "Return whether or not a user is enabled (active) in the system",
+        "operationId": "userEnabled",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/user"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/ENABLED"
+          },
+          "404": {
+            "description": "User not found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Enable/Disable User",
+        "operationId": "setUserEnabled",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/user"
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/ENABLED"
+        },
+        "responses": {
+          "200": {
+            "description": "Flag set"
+          },
+          "400": {
+            "$ref": "#/components/responses/MALFORMED_REQUEST_400"
+          },
+          "404": {
+            "description": "User not found"
+          }
+        }
+      }
+    },
+    "/admin/users": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "List users",
+        "operationId": "listUsers",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/USER_LIST"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Add user",
+        "operationId": "addUser",
+        "requestBody": {
+          "$ref": "#/components/requestBodies/USER_CREATE"
+        },
+        "responses": {
+          "201": {
+            "description": "User created"
+          },
+          "400": {
+            "$ref": "#/components/responses/MALFORMED_REQUEST_400"
+          }
+        }
+      }
+    },
+    "/admin/users/{user}/pwd": {
+      "put": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Change user's password",
+        "operationId": "changePassword",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/user"
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/USER_PASSWD"
+        },
+        "responses": {
+          "200": {
+            "description": "Password successfully changed"
+          },
+          "400": {
+            "$ref": "#/components/responses/MALFORMED_REQUEST_400"
+          },
+          "404": {
+            "description": "User not found"
+          }
+        }
+      }
+    },
+    "/admin/users/{user}/roles": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Get user's roles",
+        "description": "Retrieve a list of all roles explicitly assigned to a user",
+        "operationId": "getUserRoles",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/user"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/ROLE_LIST"
+          },
+          "404": {
+            "description": "User not found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Set user's roles",
+        "description": "Overwrite the list of roles explicitly assigned to a user",
+        "operationId": "setUserRoles",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/user"
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/ROLE_LIST"
+        },
+        "responses": {
+          "200": {
+            "description": "Roles successfully updated"
+          },
+          "400": {
+            "$ref": "#/components/responses/MALFORMED_REQUEST_400"
+          },
+          "404": {
+            "description": "User not found"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Add role to user",
+        "operationId": "addUserRole",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/user"
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/ROLENAME"
+        },
+        "responses": {
+          "204": {
+            "description": "Role successfully added"
+          },
+          "400": {
+            "$ref": "#/components/responses/MALFORMED_REQUEST_400"
+          },
+          "404": {
+            "description": "User/Role not found"
+          }
+        }
+      }
+    },
+    "/admin/users/{user}": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Get User",
+        "description": "Retrieve attributes, roles, and permissions of a User",
+        "operationId": "getUser",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/user"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/USER"
+          },
+          "404": {
+            "description": "User not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Delete User",
+        "operationId": "deleteUser",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/user"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "User deleted"
+          },
+          "404": {
+            "description": "User not found"
+          }
+        }
+      }
+    },
+    "/admin/users/{user}/superuser": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "User is Superuser",
+        "description": "Return whether or not a user is a Superuser",
+        "operationId": "isSuper",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/user"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/SUPERUSER"
+          },
+          "404": {
+            "description": "User not found"
+          }
+        }
+      }
+    },
+    "/admin/users/{user}/roles/{role}": {
+      "delete": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Remove role from user",
+        "operationId": "removeUserRole",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/user"
+          },
+          {
+            "$ref": "#/components/parameters/role"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Role successfully removed"
+          },
+          "404": {
+            "description": "User/Role not found"
+          }
+        }
+      }
+    },
+    "/admin/roles/{role}": {
+      "delete": {
+        "tags": [
+          "Roles"
+        ],
+        "summary": "Delete role",
+        "operationId": "deleteRole",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/role"
+          },
+          {
+            "name": "force",
+            "in": "query",
+            "description": "Whether to force delete if role is assigned to users",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Role deleted"
+          },
+          "404": {
+            "description": "Role not found"
+          }
+        }
+      }
+    },
+    "/admin/roles//{role}/users": {
+      "get": {
+        "tags": [
+          "Roles"
+        ],
+        "summary": "Get users with role",
+        "description": "Returns a list of all users that have a specific role",
+        "operationId": "getUsersWithRole",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/role"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/USER_LIST"
+          },
+          "404": {
+            "description": "Role not found"
+          }
+        }
+      }
+    },
+    "/admin/roles": {
+      "get": {
+        "tags": [
+          "Roles"
+        ],
+        "summary": "List Roles",
+        "description": "Get the names of all roles in the system",
+        "operationId": "listRoles",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/ROLE_LIST"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Roles"
+        ],
+        "summary": "Add role",
+        "operationId": "addRole",
+        "requestBody": {
+          "$ref": "#/components/requestBodies/ROLENAME"
+        },
+        "responses": {
+          "201": {
+            "description": "Role added"
+          },
+          "400": {
+            "$ref": "#/components/responses/MALFORMED_REQUEST_400"
+          }
+        }
+      }
+    },
+    "/admin/permissions/user/{user}": {
+      "get": {
+        "tags": [
+          "Permissions"
+        ],
+        "summary": "Get user permissions",
+        "description": "Get all permissions assigned to a given user",
+        "operationId": "getUserPermissions",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/user"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/PERMISSION_LIST"
+          },
+          "404": {
+            "description": "User not found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Permissions"
+        ],
+        "summary": "Add User Permission",
+        "description": "Grant a permission directly to a specified user",
+        "operationId": "addUserPermission",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/user"
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/PERMISSION"
+        },
+        "responses": {
+          "201": {
+            "description": "Permission added"
+          },
+          "400": {
+            "$ref": "#/components/responses/MALFORMED_REQUEST_400"
+          },
+          "404": {
+            "description": "User not found"
+          }
+        }
+      }
+    },
+    "/admin/permissions/effective/user/{user}": {
+      "get": {
+        "tags": [
+          "Permissions"
+        ],
+        "summary": "Get effective user permissions",
+        "description": "Get all permissions assigned to a given user as well as those granted by assigned roles",
+        "operationId": "getEffectiveUserPermissions",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/user"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/PERMISSION_LIST"
+          },
+          "404": {
+            "description": "User not found"
+          }
+        }
+      }
+    },
+    "/admin/permissions/user/{user}/delete": {
+      "post": {
+        "tags": [
+          "Permissions"
+        ],
+        "summary": "Delete User Permission",
+        "description": "Revoke a permission from a given user",
+        "operationId": "deleteUserPermission",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/user"
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/PERMISSION"
+        },
+        "responses": {
+          "201": {
+            "description": "Permission removed"
+          },
+          "400": {
+            "$ref": "#/components/responses/MALFORMED_REQUEST_400"
+          },
+          "404": {
+            "description": "Permission not found"
+          }
+        }
+      }
+    },
+    "/admin/permissions/role/{role}/delete": {
+      "post": {
+        "tags": [
+          "Permissions"
+        ],
+        "summary": "Delete Role Permission",
+        "description": "Remove a permission from a given role",
+        "operationId": "deleteRolePermission",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/role"
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/PERMISSION"
+        },
+        "responses": {
+          "201": {
+            "description": "Permission removed"
+          },
+          "400": {
+            "$ref": "#/components/responses/MALFORMED_REQUEST_400"
+          },
+          "404": {
+            "description": "Permission not found"
+          }
+        }
+      }
+    },
+    "/admin/permissions/role/{role}": {
+      "get": {
+        "tags": [
+          "Permissions"
+        ],
+        "summary": "Get role permissions",
+        "description": "Get all permissions attributed to a given role",
+        "operationId": "getRolePermissions",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/role"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/PERMISSION_LIST"
+          },
+          "404": {
+            "description": "Role not found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Permissions"
+        ],
+        "summary": "Add Role Permission",
+        "description": "Add a permission to a specified role",
+        "operationId": "addRolePermission",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/role"
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/PERMISSION"
+        },
+        "responses": {
+          "201": {
+            "description": "Permission added"
+          },
+          "400": {
+            "$ref": "#/components/responses/MALFORMED_REQUEST_400"
+          },
+          "404": {
+            "description": "Role not found"
+          }
+        }
+      }
+    },
+    "/admin/queries/{query}": {
+      "get": {
+        "tags": [
+          "Queries"
+        ],
+        "summary": "Get query",
+        "description": "Get details of a specific query",
+        "operationId": "getQuery",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/query"
+          },
+          {
+            "name": "query",
+            "in": "path",
+            "description": "Query name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/QUERY_LIST"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Queries"
+        ],
+        "summary": "Kill query",
+        "operationId": "killQuery",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/query"
+          },
+          {
+            "name": "query",
+            "in": "path",
+            "description": "Query name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Query killed"
+          },
+          "404": {
+            "description": "Query not found"
+          }
+        }
+      }
+    },
+    "/admin/queries": {
+      "get": {
+        "tags": [
+          "Queries"
+        ],
+        "summary": "List queries",
+        "description": "Get a list of all running queries",
+        "operationId": "listQueries",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/QUERY_LIST"
+          }
+        }
+      }
+    },
+    "/admin/queries/stored": {
+      "get": {
+        "tags": [
+          "Queries"
+        ],
+        "summary": "List stored queries",
+        "operationId": "listStoredQueries",
+        "responses": {
+          "200": {
+            "description": "RDF serialization of server's stored queries",
+            "content": {
+              "text/turtle": {
+                "examples": {
+                  "STORED_QUERY_TURTLE": {
+                    "description": "STORED_QUERY_TURTLE",
+                    "$ref": "#/components/examples/STORED_QUERY_TURTLE"
+                  }
+                }
+              },
+              "application/trig": {
+                "examples": {
+                  "STORED_QUERY_TRIG": {
+                    "description": "STORED_QUERY_TRIG",
+                    "$ref": "#/components/examples/STORED_QUERY_TRIG"
+                  }
+                }
+              },
+              "application/rdf+xml": {
+                "examples": {
+                  "STORED_QUERY_RDFXML": {
+                    "description": "STORED_QUERY_RDFXML",
+                    "$ref": "#/components/examples/STORED_QUERY_RDFXML"
+                  }
+                }
+              },
+              "application/n-triples": {
+                "examples": {
+                  "STORED_QUERY_NTRIPLESQUADS": {
+                    "description": "STORED_QUERY_NTRIPLESQUADS",
+                    "$ref": "#/components/examples/STORED_QUERY_NTRIPLESQUADS"
+                  }
+                }
+              },
+              "application/n-quads": {
+                "examples": {
+                  "STORED_QUERY_NTRIPLESQUADS": {
+                    "description": "STORED_QUERY_NTRIPLESQUADS",
+                    "$ref": "#/components/examples/STORED_QUERY_NTRIPLESQUADS"
+                  }
+                }
+              },
+              "application/ld+json": {}
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Queries"
+        ],
+        "summary": "Update stored query",
+        "description": "Add stored query, overwriting if a query with that name already exists",
+        "operationId": "updateStoredQuery",
+        "requestBody": {
+          "content": {
+            "text/turtle": {
+              "examples": {
+                "STORED_QUERY_TURTLE": {
+                  "description": "STORED_QUERY_TURTLE",
+                  "$ref": "#/components/examples/STORED_QUERY_TURTLE"
+                }
+              }
+            },
+            "application/trig": {
+              "examples": {
+                "STORED_QUERY_TRIG": {
+                  "description": "STORED_QUERY_TRIG",
+                  "$ref": "#/components/examples/STORED_QUERY_TRIG"
+                }
+              }
+            },
+            "application/rdf+xml": {
+              "examples": {
+                "STORED_QUERY_RDFXML": {
+                  "description": "STORED_QUERY_RDFXML",
+                  "$ref": "#/components/examples/STORED_QUERY_RDFXML"
+                }
+              }
+            },
+            "application/n-triples": {
+              "examples": {
+                "STORED_QUERY_NTRIPLESQUADS": {
+                  "description": "STORED_QUERY_NTRIPLESQUADS",
+                  "$ref": "#/components/examples/STORED_QUERY_NTRIPLESQUADS"
+                }
+              }
+            },
+            "application/n-quads": {
+              "examples": {
+                "STORED_QUERY_NTRIPLESQUADS": {
+                  "description": "STORED_QUERY_NTRIPLESQUADS",
+                  "$ref": "#/components/examples/STORED_QUERY_NTRIPLESQUADS"
+                }
+              }
+            },
+            "application/ld+json": {}
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "$ref": "#/components/responses/MALFORMED_REQUEST_400"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Queries"
+        ],
+        "summary": "Add stored query",
+        "operationId": "addStoredQuery",
+        "requestBody": {
+          "content": {
+            "text/turtle": {
+              "examples": {
+                "STORED_QUERY_TURTLE": {
+                  "description": "STORED_QUERY_TURTLE",
+                  "$ref": "#/components/examples/STORED_QUERY_TURTLE"
+                }
+              }
+            },
+            "application/trig": {
+              "examples": {
+                "STORED_QUERY_TRIG": {
+                  "description": "STORED_QUERY_TRIG",
+                  "$ref": "#/components/examples/STORED_QUERY_TRIG"
+                }
+              }
+            },
+            "application/rdf+xml": {
+              "examples": {
+                "STORED_QUERY_RDFXML": {
+                  "description": "STORED_QUERY_RDFXML",
+                  "$ref": "#/components/examples/STORED_QUERY_RDFXML"
+                }
+              }
+            },
+            "application/n-triples": {
+              "examples": {
+                "STORED_QUERY_NTRIPLESQUADS": {
+                  "description": "STORED_QUERY_NTRIPLESQUADS",
+                  "$ref": "#/components/examples/STORED_QUERY_NTRIPLESQUADS"
+                }
+              }
+            },
+            "application/n-quads": {
+              "examples": {
+                "STORED_QUERY_NTRIPLESQUADS": {
+                  "description": "STORED_QUERY_NTRIPLESQUADS",
+                  "$ref": "#/components/examples/STORED_QUERY_NTRIPLESQUADS"
+                }
+              }
+            },
+            "application/ld+json": {}
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "$ref": "#/components/responses/MALFORMED_REQUEST_400"
+          },
+          "422": {
+            "description": "Stored query already exists"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Queries"
+        ],
+        "summary": "Delete all stored queries",
+        "operationId": "clearAllStoredQueries",
+        "responses": {
+          "default": {
+            "description": "default response",
+            "content": {
+              "*/*": {}
+            }
+          }
+        }
+      }
+    },
+    "/admin/queries/stored/{query}": {
+      "get": {
+        "tags": [
+          "Queries"
+        ],
+        "summary": "Get stored query",
+        "operationId": "getStoredQuery",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/query"
+          },
+          {
+            "name": "query",
+            "in": "path",
+            "description": "Query name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "RDF serialization of chosen stored query",
+            "content": {
+              "text/turtle": {
+                "examples": {
+                  "STORED_QUERY_TURTLE": {
+                    "description": "STORED_QUERY_TURTLE",
+                    "$ref": "#/components/examples/STORED_QUERY_TURTLE"
+                  }
+                }
+              },
+              "application/trig": {
+                "examples": {
+                  "STORED_QUERY_TRIG": {
+                    "description": "STORED_QUERY_TRIG",
+                    "$ref": "#/components/examples/STORED_QUERY_TRIG"
+                  }
+                }
+              },
+              "application/rdf+xml": {
+                "examples": {
+                  "STORED_QUERY_RDFXML": {
+                    "description": "STORED_QUERY_RDFXML",
+                    "$ref": "#/components/examples/STORED_QUERY_RDFXML"
+                  }
+                }
+              },
+              "application/n-triples": {
+                "examples": {
+                  "STORED_QUERY_NTRIPLESQUADS": {
+                    "description": "STORED_QUERY_NTRIPLESQUADS",
+                    "$ref": "#/components/examples/STORED_QUERY_NTRIPLESQUADS"
+                  }
+                }
+              },
+              "application/n-quads": {
+                "examples": {
+                  "STORED_QUERY_NTRIPLESQUADS": {
+                    "description": "STORED_QUERY_NTRIPLESQUADS",
+                    "$ref": "#/components/examples/STORED_QUERY_NTRIPLESQUADS"
+                  }
+                }
+              },
+              "application/ld+json": {}
+            }
+          },
+          "404": {
+            "description": "Query does not exist"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Queries"
+        ],
+        "summary": "Delete stored query",
+        "operationId": "deleteStoredQuery",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/query"
+          },
+          {
+            "name": "query",
+            "in": "path",
+            "description": "Query name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Query deleted"
+          },
+          "404": {
+            "description": "Query does not exist"
+          }
+        }
+      }
+    },
+    "/admin/functions/stored": {
+      "get": {
+        "tags": [
+          "Stored Functions"
+        ],
+        "summary": "Get Stored Functions",
+        "description": "Retrieve all stored functions on the server, or optionally just the function specified in the query string parameter",
+        "operationId": "exportStoredFunctions",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "description": "The name of the stored function",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/plain": {
+                "examples": {
+                  "STORED_FUNCTION": {
+                    "description": "STORED_FUNCTION",
+                    "$ref": "#/components/examples/STORED_FUNCTION"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Function does not exist"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Stored Functions"
+        ],
+        "summary": "Add Stored Function",
+        "operationId": "addStoredFunction",
+        "requestBody": {
+          "content": {
+            "text/plain": {
+              "examples": {
+                "STORED_FUNCTION": {
+                  "description": "STORED_FUNCTION",
+                  "$ref": "#/components/examples/STORED_FUNCTION"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Function added"
+          },
+          "422": {
+            "description": "Function with the given name exists"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Stored Functions"
+        ],
+        "summary": "Delete Stored Functions",
+        "description": "Delete all stored functions on the server, or optionally just the function specified in the query string parameter",
+        "operationId": "deleteStoredFunction",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "description": "The name of the stored function",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Function deleted"
+          },
+          "400": {
+            "description": "Function does not exist"
+          }
+        }
+      }
+    },
+    "/admin/functions/stored/{name}": {
+      "get": {
+        "tags": [
+          "Stored Functions"
+        ],
+        "summary": "Get Stored Function",
+        "operationId": "getStoredFunction",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/name"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/plain": {
+                "examples": {
+                  "STORED_FUNCTION": {
+                    "description": "STORED_FUNCTION",
+                    "$ref": "#/components/examples/STORED_FUNCTION"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Function does not exist"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Stored Functions"
+        ],
+        "summary": "Delete Stored Function",
+        "description": "Delete the stored function specified in the query string parameter",
+        "operationId": "deleteStoredFunctionNamed",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/name"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Function deleted"
+          },
+          "400": {
+            "description": "Function does not exist"
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
       "GENERIC_RESPONSE_MESSAGE": {
+        "required": [
+          "message"
+        ],
         "properties": {
           "message": {
             "type": "string",
@@ -2047,6 +3110,9 @@
         }
       },
       "GENERIC_RESPONSE_ERROR_MESSAGE": {
+        "required": [
+          "message"
+        ],
         "properties": {
           "message": {
             "type": "string",
@@ -2074,6 +3140,9 @@
             ],
             "type": "array",
             "items": {
+              "required": [
+                "@value"
+              ],
               "properties": {
                 "@type": {
                   "type": "string",
@@ -2197,7 +3266,8 @@
         "properties": {
           "timeout": {
             "type": "integer",
-            "description": "timeout in ms"
+            "description": "timeout in ms",
+            "format": "int32"
           }
         }
       },
@@ -2256,11 +3326,13 @@
           "added": {
             "type": "integer",
             "description": "Approximate number of triples added",
+            "format": "int32",
             "example": 42
           },
           "removed": {
             "type": "integer",
             "description": "Approximate number of triples removed",
+            "format": "int32",
             "example": 29
           }
         }
@@ -2385,6 +3457,7 @@
           },
           "cardinality": {
             "type": "integer",
+            "format": "int32",
             "example": 42
           },
           "children": {
@@ -2393,6 +3466,315 @@
               "$ref": "#/components/schemas/PLAN_NODE"
             }
           }
+        }
+      },
+      "USER_LIST": {
+        "required": [
+          "users"
+        ],
+        "properties": {
+          "users": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "USER_CREATE": {
+        "required": [
+          "username",
+          "password"
+        ],
+        "properties": {
+          "username": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          }
+        }
+      },
+      "USER_PASSWD": {
+        "required": [
+          "password"
+        ],
+        "properties": {
+          "password": {
+            "type": "string"
+          }
+        }
+      },
+      "ROLE_LIST": {
+        "required": [
+          "roles"
+        ],
+        "properties": {
+          "roles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "ROLENAME": {
+        "required": [
+          "rolename"
+        ],
+        "properties": {
+          "rolename": {
+            "type": "string"
+          }
+        }
+      },
+      "ENABLED": {
+        "required": [
+          "enabled"
+        ],
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          }
+        }
+      },
+      "SUPERUSER": {
+        "required": [
+          "superuser"
+        ],
+        "properties": {
+          "superuser": {
+            "type": "boolean"
+          }
+        }
+      },
+      "USER": {
+        "required": [
+          "enabled",
+          "superuser",
+          "roles",
+          "permissions"
+        ],
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "superuser": {
+            "type": "boolean"
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PERMISSION_WITH_EXPLICIT"
+            }
+          }
+        }
+      },
+      "PERMISSION": {
+        "required": [
+          "action",
+          "resource_type",
+          "resource"
+        ],
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "read",
+              "write",
+              "create",
+              "delete",
+              "revoke",
+              "grant",
+              "execute",
+              "all"
+            ]
+          },
+          "resource_type": {
+            "type": "string",
+            "enum": [
+              "ALL",
+              "USER",
+              "ROLE",
+              "ROLE_ASSIGNMENT",
+              "PERMISSION",
+              "DATABASE",
+              "NAMED_GRAPH",
+              "VIRTUAL_GRAPH",
+              "DBMS_ADMIN",
+              "DATABASE_METADATA",
+              "DATABASE_ADMIN"
+            ]
+          },
+          "resource": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "PERMISSION_WITH_EXPLICIT": {
+        "required": [
+          "action",
+          "resource_type",
+          "resource"
+        ],
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "read",
+              "write",
+              "create",
+              "delete",
+              "revoke",
+              "grant",
+              "execute",
+              "all"
+            ]
+          },
+          "resource_type": {
+            "type": "string",
+            "enum": [
+              "ALL",
+              "USER",
+              "ROLE",
+              "ROLE_ASSIGNMENT",
+              "PERMISSION",
+              "DATABASE",
+              "NAMED_GRAPH",
+              "VIRTUAL_GRAPH",
+              "DBMS_ADMIN",
+              "DATABASE_METADATA",
+              "DATABASE_ADMIN"
+            ]
+          },
+          "resource": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "explicit": {
+            "type": "boolean",
+            "description": "Whether this permission is explicitly granted to the user versus granted via a role"
+          }
+        }
+      },
+      "PERMISSION_LIST": {
+        "required": [
+          "permissions"
+        ],
+        "properties": {
+          "permissions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PERMISSION"
+            }
+          }
+        }
+      },
+      "QUERY_LIST": {
+        "required": [
+          "queries"
+        ],
+        "properties": {
+          "queries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/QUERY"
+            }
+          }
+        }
+      },
+      "QUERY": {
+        "required": [
+          "query",
+          "db",
+          "endTime",
+          "startTime",
+          "id",
+          "kernelId",
+          "timeout",
+          "user",
+          "reasoning",
+          "status"
+        ],
+        "properties": {
+          "query": {
+            "type": "string",
+            "example": "SELECT * WHERE {?s ?p ?o}"
+          },
+          "db": {
+            "type": "string",
+            "description": "The database on which the query is running"
+          },
+          "endTime": {
+            "type": "long",
+            "description": "The UNIX timestamp at which the query ended, or -1 if it is still running"
+          },
+          "startTime": {
+            "type": "long",
+            "description": "The UNIX timestamp when the query started running"
+          },
+          "id": {
+            "type": "string"
+          },
+          "kernelId": {
+            "type": "string"
+          },
+          "timeout": {
+            "type": "long",
+            "description": "The amount of time (in ms) after which the query will time out, or -1 if it will not time out"
+          },
+          "user": {
+            "type": "string",
+            "description": "The user that initiated the query"
+          },
+          "reasoning": {
+            "type": "boolean",
+            "description": "Whether reasoning/inference is enabled on the query"
+          },
+          "reasoningSchema": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "Not started",
+              "Pre-execution",
+              "Running",
+              "Terminating",
+              "Done"
+            ]
+          }
+        }
+      },
+      "BITES_POST_DOC": {
+        "properties": {
+          "rdfExtractors": {
+            "type": "string",
+            "example": "tika,entities"
+          },
+          "testExtractors": {
+            "type": "string",
+            "example": "tika"
+          },
+          "keyAssertions": {
+            "type": "boolean",
+            "description": "Whether named graph contents should be retained for the document if it already exists"
+          }
+        },
+        "additionalProperties": {
+          "type": "string",
+          "format": "binary"
         }
       }
     },
@@ -2425,7 +3807,110 @@
             "description": "5 - Transaction Not Found  \n6 - Database Not Found",
             "schema": {
               "type": "integer",
+              "format": "int32",
               "example": 42
+            }
+          }
+        }
+      },
+      "INVALID_QUERY": {
+        "description": "Invalid query sent",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/GENERIC_RESPONSE_ERROR_MESSAGE"
+            }
+          }
+        }
+      },
+      "JSON_CONFIG_PROPERTIES": {
+        "description": "JSON object detailing all metadata options",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/JSON_CONFIG_PROPERTIES"
+            }
+          }
+        }
+      },
+      "ROLE_LIST": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ROLE_LIST"
+            }
+          }
+        }
+      },
+      "USER_LIST": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/USER_LIST"
+            }
+          }
+        }
+      },
+      "USER": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/USER"
+            }
+          }
+        }
+      },
+      "ENABLED": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ENABLED"
+            }
+          }
+        }
+      },
+      "SUPERUSER": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/SUPERUSER"
+            }
+          }
+        }
+      },
+      "MALFORMED_REQUEST_400": {
+        "description": "Malformed request body",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/GENERIC_RESPONSE_ERROR_MESSAGE"
+            }
+          }
+        }
+      },
+      "PERMISSION_LIST": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/PERMISSION_LIST"
+            }
+          }
+        }
+      },
+      "QUERY_LIST": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/QUERY_LIST"
+            }
+          }
+        }
+      },
+      "QUERY": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/QUERY"
             }
           }
         }
@@ -2480,6 +3965,33 @@
         "schema": {
           "type": "string"
         }
+      },
+      "user": {
+        "name": "user",
+        "in": "path",
+        "description": "Username",
+        "required": true,
+        "schema": {
+          "type": "string"
+        }
+      },
+      "role": {
+        "name": "role",
+        "in": "path",
+        "description": "Role name",
+        "required": true,
+        "schema": {
+          "type": "string"
+        }
+      },
+      "name": {
+        "name": "name",
+        "in": "path",
+        "description": "The name of the stored function",
+        "required": true,
+        "schema": {
+          "type": "string"
+        }
       }
     },
     "examples": {
@@ -2530,7 +4042,124 @@
       },
       "QUERY_PLAN_TEST": {
         "value": "prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>\nprefix : <http://example.org/stardog#>\n\nProjection(?s, ?label) [#625]\n`─ MergeJoin(?s) [#625]\n   +─ Scan[POSC](?s, <http://www.w3.org/1999/02/22-rdf-syntax-ns#type>, :Example) [#1]\n   `─ Scan[PSOC](?s, rdfs:label, ?label) [#718K]"
+      },
+      "STORED_QUERY_TURTLE": {
+        "value": "@prefix system: <http://system.stardog.com/> .\n\nsystem:QuerymyQuery a system:StoredQuery ;\n   system:queryName \"myQuery\" ;\n   system:queryString \"select * {?s ?p ?o}\" ;\n   system:queryCreator \"admin\" ;\n   system:queryDatabase \"myDb\" ."
+      },
+      "STORED_QUERY_TRIG": {
+        "value": "@prefix system: <http://system.stardog.com/> .\n\n{\n    system:QuerymyQuery a system:StoredQuery ;\n      system:queryName \"myQuery\" ;\n      system:queryString \"select * {?s ?p ?o}\" ;\n      system:queryCreator \"admin\" ;\n      system:queryDatabase \"myDb\" .\n}"
+      },
+      "STORED_QUERY_NTRIPLESQUADS": {
+        "value": "<http://system.stardog.com/QuerymyQuery> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://system.stardog.com/StoredQuery> .\n<http://system.stardog.com/QuerymyQuery> <http://system.stardog.com/queryName> \"myQuery\" .\n<http://system.stardog.com/QuerymyQuery> <http://system.stardog.com/queryString> \"select * {?s ?p ?o}\" .\n<http://system.stardog.com/QuerymyQuery> <http://system.stardog.com/queryCreator> \"admin\" .\n<http://system.stardog.com/QuerymyQuery> <http://system.stardog.com/queryDatabase> \"myDb\" ."
+      },
+      "STORED_QUERY_RDFXML": {
+        "value": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<rdf:RDF\n\txmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"\n\txmlns:system=\"http://system.stardog.com/\">\n    <rdf:Description rdf:about=\"http://system.stardog.com/QuerymyQuery\">\n        <rdf:type rdf:resource=\"http://system.stardog.com/StoredQuery\"/>\n        <system:queryName rdf:datatype=\"http://www.w3.org/2001/XMLSchema#string\">myQuery</system:queryName>\n        <system:queryString rdf:datatype=\"http://www.w3.org/2001/XMLSchema#string\">select * {?s ?p ?o}</system:queryString>\n        <system:queryCreator rdf:datatype=\"http://www.w3.org/2001/XMLSchema#string\">admin</system:queryCreator>\n        <system:queryDatabase rdf:datatype=\"http://www.w3.org/2001/XMLSchema#string\">myDb</system:queryDatabase>\n    </rdf:Description>\n</rdf:RDF>"
+      },
+      "STORED_FUNCTION": {
+        "value": "FUNCTION permutation(?n,?r) {\n   (factorial(?n) / factorial((?n - ?r)))\n}"
+      }
+    },
+    "requestBodies": {
+      "ROLENAME": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ROLENAME"
+            }
+          }
+        }
+      },
+      "ENABLED": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ENABLED"
+            }
+          }
+        }
+      },
+      "USER_CREATE": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/USER_CREATE"
+            }
+          }
+        }
+      },
+      "USER_PASSWD": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/USER_PASSWD"
+            }
+          }
+        }
+      },
+      "DB_OFFLINE_ONLINE": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/DB_OFFLINE_ONLINE"
+            }
+          }
+        }
+      },
+      "ROLE_LIST": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ROLE_LIST"
+            }
+          }
+        }
+      },
+      "PERMISSION": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/PERMISSION"
+            }
+          }
+        }
+      },
+      "STORED_FUNCTION": {
+        "content": {
+          "text/plain": {
+            "example": {
+              "$ref": "#/components/examples/STORED_FUNCTION"
+            }
+          }
+        }
       }
     }
-  }
+  },
+  "x-tagGroups": [
+    {
+      "name": "Server",
+      "tags": [
+        "Server Admin",
+        "Server Status/Metrics",
+        "Queries",
+        "Stored Functions"
+      ]
+    },
+    {
+      "name": "Database",
+      "tags": [
+        "DB Admin",
+        "Transactions",
+        "Graph Store Protocol",
+        "SPARQL"
+      ]
+    },
+    {
+      "name": "Security",
+      "tags": [
+        "Users",
+        "Roles",
+        "Permissions"
+      ]
+    }
+  ]
 }
