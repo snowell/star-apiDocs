@@ -1,10 +1,62 @@
 openapi: 3.0.1
 info:
   title: Stardog HTTP API
-  description: Description
+  description: |
+    # Overview
+    Here be an overview of some kind
+
+    # Error Codes
+    Here are explanations of what the various error codes mean:
+
+    Error Code | Meaning
+    -----------|--------
+    000012 | UNKNOWN
+    000IA2 | ILLEGAL_ARGUMENT
+    000SD4 | SHUTTING_DOWN
+    00UOE2 | UNSUPPORTED_OPERATION
+    0D0012 | UNKNOWN_DATABASE_EXCEPTION
+    0D0CE3 | DATABASE_CONSISTENCY_EXCEPTION
+    0D0DE2 | DATABASE_EXISTS
+    0D0DU2 | DATABASE_UNKNOWN
+    0D0TU2 | TRANSACTION_UNKNOWN
+    0DICC2 | INVALID_CONNECTION_CONFIGURATION
+    0DIDN2 | INVALID_DATABASE_NAME
+    0DIDS2 | INVALID_DATABASE_STATE
+    BIUDE2 | MISSING_DOCUMENT
+    HS0012 | UNKNOWN_CONNECTION_EXCEPTION
+    HSJSE2 | JSON_SYNTAX_EXCEPTION
+    HSJSO2 | JSON_EXCEPTION
+    HSSSL3 | SSL_EXCEPTION
+    QE0012 | UNKNOWN_QUERY_EXCEPTION
+    QE0FE2 | FUNCTION_EXISTS
+    QE0PE2 | PARSE_EXCEPTION
+    QE0QE2 | QUERY_EXISTS
+    QECTP2 | CANNOT_TRANSLATE_PLAN
+    QEFNF2 | FUNCTION_NOT_FOUND
+    QEIQT2 | INVALID_QUERY_TYPE
+    QEIVR2 | INVALID_RDF
+    QEMAQ2 | MALFORMED_QUERY
+    QEONS2 | OPERATION_NOT_SUPPORTED
+    QEQNF2 | QUERY_NOT_FOUND
+    QEQOE2 | OPERATOR_EXCEPTION
+    QEQPE2 | QUERY_PARSE_EXCEPTION
+    QEWCE2 | WRITE_CONFLICT_EXCEPTION
+    SE0012 | UNKNOWN_SECURITY_EXCEPTION
+    SE0IP2 | ILLEGAL_PASSWORD
+    SE0RE2 | SECURITY_RESOURCE_EXISTS
+    SEAEE2 | AUTHENTICATION_EXCEPTION
+    SEAOE2 | AUTHORIZATION_EXCEPTION
+    SEIPT2 | INCORRECT_PRINCIPAL_TRANSACTION
+    SERIU2 | SECURITY_RESOURCE_IN_USE
+    SERNF2 | SECURITY_RESOURCE_NOT_FOUND
+    SERNI2 | SECURITY_RESOURCE_NAME_INVALID
+    SERTI2 | SECURITY_RESOURCE_TYPE_INVALID
+    TXFTE2 | FATAL_TRANSACTION_EXCEPTION
+    TXHME2 | HEURISTIC_MIXED_EXCEPTION
+    TXHRE2 | HEURISTIC_ROLLBACK
   contact:
     email: stephen@stardog.com
-  version: 7.3.0-SNAPSHOT-20200413
+  version: 7.3.0-SNAPSHOT-20200730
 tags:
 - name: Server Admin
   description: Server administration operations. May require superuser permissions
@@ -28,6 +80,18 @@ tags:
   description: Operations relating to queries running on the server
 - name: Stored Functions
   description: Operations relating to user-defined functions stored on the server
+- name: BITES
+  description: Operations for BITES, the unstructured data service
+- name: GraphQL
+  description: GraphQL Queries
+- name: Integrity Constraints
+  description: ""
+- name: Data Caching
+  description: Operations for working with cached data
+- name: Reasoning
+  description: Operations for interacting with the inference engine
+- name: Virtual Graphs
+  description: Operations for virtualizing structured data
 paths:
   /admin/shutdown:
     post:
@@ -70,7 +134,8 @@ paths:
       description: Retrieve the namespaces stored in the database
       operationId: getNamespaces
       parameters:
-      - $ref: '#/components/parameters/db'
+      - name: db
+        $ref: '#/components/parameters/db'
       responses:
         200:
           description: A JSON object listing the prefixes and IRIs of the stored namespaces
@@ -80,6 +145,19 @@ paths:
                 $ref: '#/components/schemas/JSON_NAMESPACES'
         404:
           description: Database does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Database does not exist
+                  code:
+                    type: string
+                    example: 0D0DU2
     post:
       tags:
       - DB Admin
@@ -88,7 +166,8 @@ paths:
         declares them
       operationId: importNamespaces
       parameters:
-      - $ref: '#/components/parameters/db'
+      - name: db
+        $ref: '#/components/parameters/db'
       requestBody:
         content:
           text/turtle:
@@ -129,29 +208,82 @@ paths:
                 $ref: '#/components/schemas/JSON_NAMESPACES'
         404:
           description: Database does not exist
-  /{db}/size:
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Database does not exist
+                  code:
+                    type: string
+                    example: 0D0DU2
+  /{db}/model:
     get:
       tags:
       - DB Admin
-      summary: Get DB Size
-      operationId: size
+      summary: Generate Model
+      description: Generate the reasoning model used by this database in various formats
+      operationId: generateModel
       parameters:
-      - $ref: '#/components/parameters/db'
-      - name: exact
+      - name: db
+        $ref: '#/components/parameters/db'
+      - $ref: '#/components/parameters/reasoning'
+      - name: output
         in: query
-        description: Whether to request that the database size be exact instead of
-          approximate
+        description: Desired output format (text, owl, shacl, sql, graphql)
         schema:
-          type: boolean
+          type: string
       responses:
         200:
-          description: The size (in triples) of the database
+          description: RDF serialization of the reasoning model
           content:
-            text/plain:
+            text/turtle:
+              examples:
+                GENERIC_TURTLE:
+                  description: GENERIC_TURTLE
+                  $ref: '#/components/examples/GENERIC_TURTLE'
+            application/trig:
+              examples:
+                GENERIC_TRIG:
+                  description: GENERIC_TRIG
+                  $ref: '#/components/examples/GENERIC_TRIG'
+            application/rdf+xml:
+              examples:
+                GENERIC_RDFXML:
+                  description: GENERIC_RDFXML
+                  $ref: '#/components/examples/GENERIC_RDFXML'
+            application/n-triples:
+              examples:
+                GENERIC_NTRIPLES:
+                  description: GENERIC_NTRIPLES
+                  $ref: '#/components/examples/GENERIC_NTRIPLES'
+            application/n-quads:
+              examples:
+                GENERIC_NQUADS:
+                  description: GENERIC_NQUADS
+                  $ref: '#/components/examples/GENERIC_NQUADS'
+            application/ld+json:
               schema:
-                type: integer
+                $ref: '#/components/schemas/GENERIC_JSONLD'
         404:
           description: Database does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Database does not exist
+                  code:
+                    type: string
+                    example: 0D0DU2
   /{db}/export:
     get:
       tags:
@@ -159,7 +291,8 @@ paths:
       summary: Export database
       operationId: export
       parameters:
-      - $ref: '#/components/parameters/db'
+      - name: db
+        $ref: '#/components/parameters/db'
       - name: obf
         in: query
         description: Path to an obfuscation configuration file, or DEFAULT
@@ -199,13 +332,27 @@ paths:
                 $ref: '#/components/schemas/GENERIC_JSONLD'
         404:
           description: Database does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Database does not exist
+                  code:
+                    type: string
+                    example: 0D0DU2
     post:
       tags:
       - DB Admin
       summary: Export database (obfuscated)
       operationId: exportObfuscated
       parameters:
-      - $ref: '#/components/parameters/db'
+      - name: db
+        $ref: '#/components/parameters/db'
       requestBody:
         description: Obfuscation configuration
         content:
@@ -267,55 +414,56 @@ paths:
                 $ref: '#/components/schemas/GENERIC_JSONLD_OBF'
         404:
           description: Database does not exist
-  /{db}/model:
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Database does not exist
+                  code:
+                    type: string
+                    example: 0D0DU2
+  /{db}/size:
     get:
       tags:
       - DB Admin
-      summary: Generate Model
-      description: Generate the reasoning model used by this database in various formats
-      operationId: generateModel
+      summary: Get DB Size
+      operationId: size
       parameters:
-      - $ref: '#/components/parameters/db'
-      - $ref: '#/components/parameters/reasoning'
-      - name: output
+      - name: db
+        $ref: '#/components/parameters/db'
+      - name: exact
         in: query
-        description: Desired output format (text, owl, shacl, sql, graphql)
+        description: Whether to request that the database size be exact instead of
+          approximate
         schema:
-          type: string
+          type: boolean
       responses:
         200:
-          description: RDF serialization of the reasoning model
+          description: The size (in triples) of the database
           content:
-            text/turtle:
-              examples:
-                GENERIC_TURTLE:
-                  description: GENERIC_TURTLE
-                  $ref: '#/components/examples/GENERIC_TURTLE'
-            application/trig:
-              examples:
-                GENERIC_TRIG:
-                  description: GENERIC_TRIG
-                  $ref: '#/components/examples/GENERIC_TRIG'
-            application/rdf+xml:
-              examples:
-                GENERIC_RDFXML:
-                  description: GENERIC_RDFXML
-                  $ref: '#/components/examples/GENERIC_RDFXML'
-            application/n-triples:
-              examples:
-                GENERIC_NTRIPLES:
-                  description: GENERIC_NTRIPLES
-                  $ref: '#/components/examples/GENERIC_NTRIPLES'
-            application/n-quads:
-              examples:
-                GENERIC_NQUADS:
-                  description: GENERIC_NQUADS
-                  $ref: '#/components/examples/GENERIC_NQUADS'
-            application/ld+json:
+            text/plain:
               schema:
-                $ref: '#/components/schemas/GENERIC_JSONLD'
+                type: integer
         404:
           description: Database does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Database does not exist
+                  code:
+                    type: string
+                    example: 0D0DU2
   /admin/databases:
     get:
       tags:
@@ -350,59 +498,6 @@ paths:
           description: Database created
         400:
           description: Invalid or malformed request body
-  /admin/databases/{db}/options:
-    get:
-      tags:
-      - DB Admin
-      summary: Get all DB options
-      description: Get the value of every metadata option for a database
-      operationId: getAllOptions
-      parameters:
-      - $ref: '#/components/parameters/db'
-      responses:
-        200:
-          description: JSON object detailing all database metadata
-          content:
-            application/json: {}
-        404:
-          description: Database does not exist
-    put:
-      tags:
-      - DB Admin
-      summary: Get DB options
-      description: Get the value of specific metadata options for a database
-      operationId: getOptions
-      parameters:
-      - $ref: '#/components/parameters/db'
-      requestBody:
-        $ref: '#/components/requestBodies/DB_METADATA'
-      responses:
-        200:
-          $ref: '#/components/responses/DB_METADATA'
-        404:
-          description: Database does not exist
-    post:
-      tags:
-      - DB Admin
-      summary: Set DB options
-      description: Set the value of specific metadata options for a database
-      operationId: setOption
-      parameters:
-      - $ref: '#/components/parameters/db'
-      requestBody:
-        description: A JSON object with keys and values equal to the desired metadata
-          options
-        content:
-          application/json:
-            example:
-              spatial.result.limit: 10000
-              query.all.graphs: true
-        required: true
-      responses:
-        200:
-          $ref: '#/components/responses/GENERIC_RESPONSE_MESSAGE'
-        404:
-          description: Database does not exist
   /admin/config_properties:
     get:
       tags:
@@ -414,6 +509,38 @@ paths:
       responses:
         200:
           $ref: '#/components/responses/JSON_CONFIG_PROPERTIES'
+  /admin/databases/{db}/offline:
+    put:
+      tags:
+      - DB Admin
+      summary: Offline database
+      description: Take a database offline
+      operationId: offline
+      parameters:
+      - name: db
+        $ref: '#/components/parameters/db'
+      requestBody:
+        $ref: '#/components/requestBodies/DB_OFFLINE_ONLINE'
+      responses:
+        200:
+          $ref: '#/components/responses/GENERIC_RESPONSE_MESSAGE'
+        400:
+          $ref: '#/components/responses/MALFORMED_REQUEST_400'
+        404:
+          description: Database does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Database does not exist
+                  code:
+                    type: string
+                    example: 0D0DU2
   /admin/restore_all:
     put:
       tags:
@@ -431,26 +558,6 @@ paths:
       responses:
         200:
           $ref: '#/components/responses/GENERIC_RESPONSE_MESSAGE'
-  /admin/databases/{db}/backup:
-    put:
-      tags:
-      - DB Admin
-      summary: Backup a database
-      description: Create a backup of a database on the server
-      operationId: backup
-      parameters:
-      - $ref: '#/components/parameters/db'
-      - name: to
-        in: query
-        description: File location on the server to which to save the backup (defaults
-          to $STARDOG_HOME/.backup)
-        schema:
-          type: string
-      responses:
-        200:
-          $ref: '#/components/responses/GENERIC_RESPONSE_MESSAGE'
-        404:
-          description: Database does not exist
   /admin/restore:
     put:
       tags:
@@ -478,6 +585,62 @@ paths:
       responses:
         200:
           $ref: '#/components/responses/GENERIC_RESPONSE_MESSAGE'
+  /admin/databases/{db}/online:
+    put:
+      tags:
+      - DB Admin
+      summary: Online database
+      description: Bring a database online
+      operationId: online
+      parameters:
+      - name: db
+        $ref: '#/components/parameters/db'
+      responses:
+        200:
+          $ref: '#/components/responses/GENERIC_RESPONSE_MESSAGE'
+        404:
+          description: Database does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Database does not exist
+                  code:
+                    type: string
+                    example: 0D0DU2
+  /admin/databases/{db}:
+    delete:
+      tags:
+      - DB Admin
+      summary: Drop database
+      description: Delete the database
+      operationId: dropDatabase
+      parameters:
+      - name: db
+        $ref: '#/components/parameters/db'
+      responses:
+        200:
+          $ref: '#/components/responses/GENERIC_RESPONSE_MESSAGE'
+        404:
+          description: Database does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Database does not exist
+                  code:
+                    type: string
+                    example: 0D0DU2
   /admin/databases/{db}/repair:
     put:
       tags:
@@ -486,26 +649,60 @@ paths:
       description: Attempt to recover a corrupted database
       operationId: repair
       parameters:
-      - $ref: '#/components/parameters/db'
+      - name: db
+        $ref: '#/components/parameters/db'
       responses:
         200:
           $ref: '#/components/responses/GENERIC_RESPONSE_MESSAGE'
         404:
           description: Database does not exist
-  /admin/databases/{db}:
-    delete:
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Database does not exist
+                  code:
+                    type: string
+                    example: 0D0DU2
+  /admin/databases/{db}/optimize:
+    put:
       tags:
       - DB Admin
-      summary: Drop database
-      description: Delete the datbase
-      operationId: dropDatabase
+      summary: Optimize database
+      description: Optimize the index of a database
+      operationId: optimize
       parameters:
-      - $ref: '#/components/parameters/db'
+      - name: db
+        $ref: '#/components/parameters/db'
+      requestBody:
+        description: Configuration parameters
+        content:
+          application/json: {}
       responses:
         200:
           $ref: '#/components/responses/GENERIC_RESPONSE_MESSAGE'
+        400:
+          $ref: '#/components/responses/MALFORMED_REQUEST_400'
         404:
           description: Database does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Database does not exist
+                  code:
+                    type: string
+                    example: 0D0DU2
   /admin/databases/backup_all:
     put:
       tags:
@@ -523,58 +720,144 @@ paths:
       responses:
         200:
           $ref: '#/components/responses/GENERIC_RESPONSE_MESSAGE'
-  /admin/databases/{db}/online:
-    put:
+  /admin/databases/{db}/options:
+    get:
       tags:
       - DB Admin
-      summary: Online database
-      description: Bring a database online
-      operationId: online
+      summary: Get all DB options
+      description: Get the value of every metadata option for a database
+      operationId: getAllOptions
       parameters:
-      - $ref: '#/components/parameters/db'
+      - name: db
+        $ref: '#/components/parameters/db'
       responses:
         200:
-          $ref: '#/components/responses/GENERIC_RESPONSE_MESSAGE'
+          description: JSON object detailing all database metadata
+          content:
+            application/json: {}
         404:
           description: Database does not exist
-  /admin/databases/{db}/optimize:
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Database does not exist
+                  code:
+                    type: string
+                    example: 0D0DU2
     put:
       tags:
       - DB Admin
-      summary: Optimize database
-      description: Optimize the index of a database
-      operationId: optimize
+      summary: Get DB options
+      description: Get the value of specific metadata options for a database
+      operationId: getOptions
       parameters:
-      - $ref: '#/components/parameters/db'
+      - name: db
+        $ref: '#/components/parameters/db'
       requestBody:
-        description: Configuration parameters
         content:
-          application/json: {}
+          application/json:
+            example:
+              spatial.result.limit: null
+              query.all.graphs: null
+        required: true
+      responses:
+        200:
+          content:
+            application/json:
+              example:
+                spatial.result.limit: 10000
+                query.all.graphs: true
+        404:
+          description: Database does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Database does not exist
+                  code:
+                    type: string
+                    example: 0D0DU2
+    post:
+      tags:
+      - DB Admin
+      summary: Set DB options
+      description: Set the value of specific metadata options for a database
+      operationId: setOption
+      parameters:
+      - name: db
+        $ref: '#/components/parameters/db'
+      requestBody:
+        description: A JSON object with keys and values equal to the desired metadata
+          options
+        content:
+          application/json:
+            example:
+              spatial.result.limit: 10000
+              query.all.graphs: true
+        required: true
       responses:
         200:
           $ref: '#/components/responses/GENERIC_RESPONSE_MESSAGE'
-        400:
-          $ref: '#/components/responses/MALFORMED_REQUEST_400'
         404:
           description: Database does not exist
-  /admin/databases/{db}/offline:
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Database does not exist
+                  code:
+                    type: string
+                    example: 0D0DU2
+  /admin/databases/{db}/backup:
     put:
       tags:
       - DB Admin
-      summary: Offline database
-      description: Take a database offline
-      operationId: offline
+      summary: Backup a database
+      description: Create a backup of a database on the server
+      operationId: backup
       parameters:
-      - $ref: '#/components/parameters/db'
-      requestBody:
-        $ref: '#/components/requestBodies/DB_OFFLINE_ONLINE'
+      - name: db
+        $ref: '#/components/parameters/db'
+      - name: to
+        in: query
+        description: File location on the server to which to save the backup (defaults
+          to $STARDOG_HOME/.backup)
+        schema:
+          type: string
       responses:
         200:
           $ref: '#/components/responses/GENERIC_RESPONSE_MESSAGE'
-        400:
-          $ref: '#/components/responses/MALFORMED_REQUEST_400'
         404:
           description: Database does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Database does not exist
+                  code:
+                    type: string
+                    example: 0D0DU2
   /{db}/transaction/begin:
     post:
       tags:
@@ -582,14 +865,28 @@ paths:
       summary: Begin a transaction
       operationId: begin
       parameters:
-      - $ref: '#/components/parameters/db'
+      - name: db
+        $ref: '#/components/parameters/db'
       responses:
         200:
           content:
             text/plain:
               example: 067e6162-3b6f-4ae2-a171-2470b63dff00
         404:
-          description: Database Not Found
+          description: Database does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Database does not exist
+                  code:
+                    type: string
+                    example: 0D0DU2
       x-sort-order:
         group: "1"
         order: "1"
@@ -600,8 +897,10 @@ paths:
       summary: Begin a transaction with specified txid
       operationId: beginTx
       parameters:
-      - $ref: '#/components/parameters/db'
-      - $ref: '#/components/parameters/txid'
+      - name: db
+        $ref: '#/components/parameters/db'
+      - name: txid
+        $ref: '#/components/parameters/txid'
       responses:
         200:
           description: Transaction begun
@@ -609,7 +908,20 @@ paths:
             text/plain:
               example: 067e6162-3b6f-4ae2-a171-2470b63dff00
         404:
-          description: Database Not Found
+          description: Transaction does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Transaction does not exist
+                  code:
+                    type: string
+                    example: 0D0TU2
       x-sort-order:
         group: "1"
         order: "2"
@@ -620,8 +932,10 @@ paths:
       summary: Commit a transaction
       operationId: commit
       parameters:
-      - $ref: '#/components/parameters/db'
-      - $ref: '#/components/parameters/txid'
+      - name: db
+        $ref: '#/components/parameters/db'
+      - name: txid
+        $ref: '#/components/parameters/txid'
       responses:
         200:
           description: Commit successful
@@ -630,7 +944,20 @@ paths:
               schema:
                 $ref: '#/components/schemas/COMMIT_RESULT'
         404:
-          $ref: '#/components/responses/DB_TX_404'
+          description: Transaction does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Transaction does not exist
+                  code:
+                    type: string
+                    example: 0D0TU2
       x-sort-order:
         group: "1"
         order: "3"
@@ -641,108 +968,31 @@ paths:
       summary: Rollback a transaction
       operationId: rollback
       parameters:
-      - $ref: '#/components/parameters/db'
-      - $ref: '#/components/parameters/txid'
+      - name: db
+        $ref: '#/components/parameters/db'
+      - name: txid
+        $ref: '#/components/parameters/txid'
       responses:
         200:
           $ref: '#/components/responses/EMPTY_SUCCESS'
         404:
-          $ref: '#/components/responses/DB_TX_404'
+          description: Transaction does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Transaction does not exist
+                  code:
+                    type: string
+                    example: 0D0TU2
       x-sort-order:
         group: "1"
         order: "4"
-  /{db}/{txid}/remove:
-    post:
-      tags:
-      - Transactions
-      summary: Remove data within a transaction
-      operationId: remove
-      parameters:
-      - $ref: '#/components/parameters/db'
-      - $ref: '#/components/parameters/txid'
-      - $ref: '#/components/parameters/graph-uri'
-      requestBody:
-        content:
-          text/turtle:
-            examples:
-              GENERIC_TURTLE:
-                description: GENERIC_TURTLE
-                $ref: '#/components/examples/GENERIC_TURTLE'
-          application/trig:
-            examples:
-              GENERIC_TRIG:
-                description: GENERIC_TRIG
-                $ref: '#/components/examples/GENERIC_TRIG'
-          application/rdf+xml:
-            examples:
-              GENERIC_RDFXML:
-                description: GENERIC_RDFXML
-                $ref: '#/components/examples/GENERIC_RDFXML'
-          application/n-triples:
-            examples:
-              GENERIC_NTRIPLES:
-                description: GENERIC_NTRIPLES
-                $ref: '#/components/examples/GENERIC_NTRIPLES'
-          application/n-quads:
-            examples:
-              GENERIC_NQUADS:
-                description: GENERIC_NQUADS
-                $ref: '#/components/examples/GENERIC_NQUADS'
-          application/ld+json:
-            schema:
-              $ref: '#/components/schemas/GENERIC_JSONLD'
-        required: true
-      responses:
-        200:
-          $ref: '#/components/responses/EMPTY_SUCCESS'
-        404:
-          $ref: '#/components/responses/DB_TX_404'
-  /{db}/{txid}/add:
-    post:
-      tags:
-      - Transactions
-      summary: Add data within a transaction
-      operationId: add
-      parameters:
-      - $ref: '#/components/parameters/db'
-      - $ref: '#/components/parameters/txid'
-      - $ref: '#/components/parameters/graph-uri'
-      requestBody:
-        content:
-          text/turtle:
-            examples:
-              GENERIC_TURTLE:
-                description: GENERIC_TURTLE
-                $ref: '#/components/examples/GENERIC_TURTLE'
-          application/trig:
-            examples:
-              GENERIC_TRIG:
-                description: GENERIC_TRIG
-                $ref: '#/components/examples/GENERIC_TRIG'
-          application/rdf+xml:
-            examples:
-              GENERIC_RDFXML:
-                description: GENERIC_RDFXML
-                $ref: '#/components/examples/GENERIC_RDFXML'
-          application/n-triples:
-            examples:
-              GENERIC_NTRIPLES:
-                description: GENERIC_NTRIPLES
-                $ref: '#/components/examples/GENERIC_NTRIPLES'
-          application/n-quads:
-            examples:
-              GENERIC_NQUADS:
-                description: GENERIC_NQUADS
-                $ref: '#/components/examples/GENERIC_NQUADS'
-          application/ld+json:
-            schema:
-              $ref: '#/components/schemas/GENERIC_JSONLD'
-        required: true
-      responses:
-        200:
-          $ref: '#/components/responses/EMPTY_SUCCESS'
-        404:
-          $ref: '#/components/responses/DB_TX_404'
   /{db}/transaction:
     get:
       tags:
@@ -750,7 +1000,8 @@ paths:
       summary: List all open transactions on a database
       operationId: listTransactions
       parameters:
-      - $ref: '#/components/parameters/db'
+      - name: db
+        $ref: '#/components/parameters/db'
       responses:
         200:
           content:
@@ -760,7 +1011,81 @@ paths:
                 items:
                   $ref: '#/components/schemas/TRANSACTION'
         404:
-          description: Database Not Found
+          description: Database does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Database does not exist
+                  code:
+                    type: string
+                    example: 0D0DU2
+  /{db}/{txid}/remove:
+    post:
+      tags:
+      - Transactions
+      summary: Remove data within a transaction
+      operationId: remove
+      parameters:
+      - name: db
+        $ref: '#/components/parameters/db'
+      - name: txid
+        $ref: '#/components/parameters/txid'
+      - $ref: '#/components/parameters/graph-uri'
+      requestBody:
+        content:
+          text/turtle:
+            examples:
+              GENERIC_TURTLE:
+                description: GENERIC_TURTLE
+                $ref: '#/components/examples/GENERIC_TURTLE'
+          application/trig:
+            examples:
+              GENERIC_TRIG:
+                description: GENERIC_TRIG
+                $ref: '#/components/examples/GENERIC_TRIG'
+          application/rdf+xml:
+            examples:
+              GENERIC_RDFXML:
+                description: GENERIC_RDFXML
+                $ref: '#/components/examples/GENERIC_RDFXML'
+          application/n-triples:
+            examples:
+              GENERIC_NTRIPLES:
+                description: GENERIC_NTRIPLES
+                $ref: '#/components/examples/GENERIC_NTRIPLES'
+          application/n-quads:
+            examples:
+              GENERIC_NQUADS:
+                description: GENERIC_NQUADS
+                $ref: '#/components/examples/GENERIC_NQUADS'
+          application/ld+json:
+            schema:
+              $ref: '#/components/schemas/GENERIC_JSONLD'
+        required: true
+      responses:
+        200:
+          $ref: '#/components/responses/EMPTY_SUCCESS'
+        404:
+          description: Transaction does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Transaction does not exist
+                  code:
+                    type: string
+                    example: 0D0TU2
   /{db}/{txid}/clear:
     post:
       tags:
@@ -768,14 +1093,90 @@ paths:
       summary: Clear database within a transaction
       operationId: clear
       parameters:
-      - $ref: '#/components/parameters/db'
-      - $ref: '#/components/parameters/txid'
+      - name: db
+        $ref: '#/components/parameters/db'
+      - name: txid
+        $ref: '#/components/parameters/txid'
       - $ref: '#/components/parameters/graph-uri'
       responses:
         200:
           $ref: '#/components/responses/EMPTY_SUCCESS'
         404:
-          $ref: '#/components/responses/DB_TX_404'
+          description: Transaction does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Transaction does not exist
+                  code:
+                    type: string
+                    example: 0D0TU2
+  /{db}/{txid}/add:
+    post:
+      tags:
+      - Transactions
+      summary: Add data within a transaction
+      operationId: add
+      parameters:
+      - name: db
+        $ref: '#/components/parameters/db'
+      - name: txid
+        $ref: '#/components/parameters/txid'
+      - $ref: '#/components/parameters/graph-uri'
+      requestBody:
+        content:
+          text/turtle:
+            examples:
+              GENERIC_TURTLE:
+                description: GENERIC_TURTLE
+                $ref: '#/components/examples/GENERIC_TURTLE'
+          application/trig:
+            examples:
+              GENERIC_TRIG:
+                description: GENERIC_TRIG
+                $ref: '#/components/examples/GENERIC_TRIG'
+          application/rdf+xml:
+            examples:
+              GENERIC_RDFXML:
+                description: GENERIC_RDFXML
+                $ref: '#/components/examples/GENERIC_RDFXML'
+          application/n-triples:
+            examples:
+              GENERIC_NTRIPLES:
+                description: GENERIC_NTRIPLES
+                $ref: '#/components/examples/GENERIC_NTRIPLES'
+          application/n-quads:
+            examples:
+              GENERIC_NQUADS:
+                description: GENERIC_NQUADS
+                $ref: '#/components/examples/GENERIC_NQUADS'
+          application/ld+json:
+            schema:
+              $ref: '#/components/schemas/GENERIC_JSONLD'
+        required: true
+      responses:
+        200:
+          $ref: '#/components/responses/EMPTY_SUCCESS'
+        404:
+          description: Transaction does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Transaction does not exist
+                  code:
+                    type: string
+                    example: 0D0TU2
   /{db}:
     get:
       tags:
@@ -785,7 +1186,8 @@ paths:
         paired with the graph IRI in the database
       operationId: getGraph
       parameters:
-      - $ref: '#/components/parameters/db'
+      - name: db
+        $ref: '#/components/parameters/db'
       - name: graph
         in: query
         description: IRI of the named graph to retrieve
@@ -830,6 +1232,19 @@ paths:
                 $ref: '#/components/schemas/GENERIC_JSONLD'
         404:
           description: Database does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Database does not exist
+                  code:
+                    type: string
+                    example: 0D0DU2
     put:
       tags:
       - Graph Store Protocol
@@ -837,7 +1252,8 @@ paths:
       description: Stores the enclosed RDF payload as RDF graph content
       operationId: setGraph
       parameters:
-      - $ref: '#/components/parameters/db'
+      - name: db
+        $ref: '#/components/parameters/db'
       - name: graph
         in: query
         description: IRI of the target named graph
@@ -892,6 +1308,19 @@ paths:
                 format: URI
         404:
           description: Database does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Database does not exist
+                  code:
+                    type: string
+                    example: 0D0DU2
     post:
       tags:
       - Graph Store Protocol
@@ -899,7 +1328,8 @@ paths:
       description: Merges the enclosed RDF payload with the specified graph content
       operationId: appendToGraph
       parameters:
-      - $ref: '#/components/parameters/db'
+      - name: db
+        $ref: '#/components/parameters/db'
       - name: graph
         in: query
         description: IRI of the target named graph
@@ -947,6 +1377,19 @@ paths:
           description: Graph merged
         404:
           description: Database does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Database does not exist
+                  code:
+                    type: string
+                    example: 0D0DU2
     delete:
       tags:
       - Graph Store Protocol
@@ -955,7 +1398,8 @@ paths:
         or encoded IRI
       operationId: dropGraph
       parameters:
-      - $ref: '#/components/parameters/db'
+      - name: db
+        $ref: '#/components/parameters/db'
       - name: graph
         in: query
         description: IRI of the named graph to delete
@@ -970,7 +1414,20 @@ paths:
         200:
           description: Graph deleted
         404:
-          description: Database or Graph does not exist
+          description: Database does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Database does not exist
+                  code:
+                    type: string
+                    example: 0D0DU2
     head:
       tags:
       - Graph Store Protocol
@@ -978,7 +1435,8 @@ paths:
       description: Test dereferenceable IRIs for validity and accessibility
       operationId: checkGraph
       parameters:
-      - $ref: '#/components/parameters/db'
+      - name: db
+        $ref: '#/components/parameters/db'
       - name: graph
         in: query
         description: IRI of the target named graph
@@ -993,147 +1451,20 @@ paths:
         200:
           description: Graph exists and is accessible
         404:
-          description: Database or Graph does not exist
-  /{db}/query:
-    get:
-      tags:
-      - SPARQL
-      summary: Perform SPARQL query
-      operationId: get
-      parameters:
-      - $ref: '#/components/parameters/db'
-      - $ref: '#/components/parameters/query'
-      - $ref: '#/components/parameters/reasoning'
-      responses:
-        200:
-          description: Query results
-          content:
-            application/sparql-results+xml:
-              examples:
-                SPARQL_RESULTS_XML:
-                  description: SPARQL_RESULTS_XML
-                  $ref: '#/components/examples/SPARQL_RESULTS_XML'
-            application/sparql-results+json:
-              schema:
-                $ref: '#/components/schemas/SPARQL_RESULTS_JSON'
-            text/csv:
-              examples:
-                SPARQL_RESULTS_CSV:
-                  description: SPARQL_RESULTS_CSV
-                  $ref: '#/components/examples/SPARQL_RESULTS_CSV'
-            text/tsv:
-              examples:
-                SPARQL_RESULTS_TSV:
-                  description: SPARQL_RESULTS_TSV
-                  $ref: '#/components/examples/SPARQL_RESULTS_TSV'
-            text/turtle:
-              examples:
-                GENERIC_TURTLE:
-                  description: GENERIC_TURTLE
-                  $ref: '#/components/examples/GENERIC_TURTLE'
-            application/trig:
-              examples:
-                GENERIC_TRIG:
-                  description: GENERIC_TRIG
-                  $ref: '#/components/examples/GENERIC_TRIG'
-            application/rdf+xml:
-              examples:
-                GENERIC_RDFXML:
-                  description: GENERIC_RDFXML
-                  $ref: '#/components/examples/GENERIC_RDFXML'
-            application/n-triples:
-              examples:
-                GENERIC_NTRIPLES:
-                  description: GENERIC_NTRIPLES
-                  $ref: '#/components/examples/GENERIC_NTRIPLES'
-            application/n-quads:
-              examples:
-                GENERIC_NQUADS:
-                  description: GENERIC_NQUADS
-                  $ref: '#/components/examples/GENERIC_NQUADS'
-            application/ld+json:
-              schema:
-                $ref: '#/components/schemas/GENERIC_JSONLD'
-        400:
-          $ref: '#/components/responses/INVALID_QUERY'
-        404:
           description: Database does not exist
-        406:
-          description: Accept header invalid for type of query sent
-    post:
-      tags:
-      - SPARQL
-      summary: Perform SPARQL query
-      operationId: post
-      parameters:
-      - $ref: '#/components/parameters/db'
-      requestBody:
-        content:
-          application/sparql-query:
-            examples:
-              SPARQL_QUERY:
-                description: SPARQL_QUERY
-                $ref: '#/components/examples/SPARQL_QUERY'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/SPARQL_QUERY'
-        required: true
-      responses:
-        200:
-          description: Query results
           content:
-            application/sparql-results+xml:
-              examples:
-                SPARQL_RESULTS_XML:
-                  description: SPARQL_RESULTS_XML
-                  $ref: '#/components/examples/SPARQL_RESULTS_XML'
-            application/sparql-results+json:
+            application/json:
               schema:
-                $ref: '#/components/schemas/SPARQL_RESULTS_JSON'
-            text/csv:
-              examples:
-                SPARQL_RESULTS_CSV:
-                  description: SPARQL_RESULTS_CSV
-                  $ref: '#/components/examples/SPARQL_RESULTS_CSV'
-            text/tsv:
-              examples:
-                SPARQL_RESULTS_TSV:
-                  description: SPARQL_RESULTS_TSV
-                  $ref: '#/components/examples/SPARQL_RESULTS_TSV'
-            text/turtle:
-              examples:
-                GENERIC_TURTLE:
-                  description: GENERIC_TURTLE
-                  $ref: '#/components/examples/GENERIC_TURTLE'
-            application/trig:
-              examples:
-                GENERIC_TRIG:
-                  description: GENERIC_TRIG
-                  $ref: '#/components/examples/GENERIC_TRIG'
-            application/rdf+xml:
-              examples:
-                GENERIC_RDFXML:
-                  description: GENERIC_RDFXML
-                  $ref: '#/components/examples/GENERIC_RDFXML'
-            application/n-triples:
-              examples:
-                GENERIC_NTRIPLES:
-                  description: GENERIC_NTRIPLES
-                  $ref: '#/components/examples/GENERIC_NTRIPLES'
-            application/n-quads:
-              examples:
-                GENERIC_NQUADS:
-                  description: GENERIC_NQUADS
-                  $ref: '#/components/examples/GENERIC_NQUADS'
-            application/ld+json:
-              schema:
-                $ref: '#/components/schemas/GENERIC_JSONLD'
-        400:
-          $ref: '#/components/responses/INVALID_QUERY'
-        404:
-          description: Database does not exist
-        406:
-          description: Accept header invalid for type of query sent
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Database does not exist
+                  code:
+                    type: string
+                    example: 0D0DU2
   /{db}/explain:
     get:
       tags:
@@ -1141,7 +1472,8 @@ paths:
       summary: Explain SPARQL query
       operationId: explainQueryGet
       parameters:
-      - $ref: '#/components/parameters/db'
+      - name: db
+        $ref: '#/components/parameters/db'
       - $ref: '#/components/parameters/query'
       - $ref: '#/components/parameters/reasoning'
       responses:
@@ -1160,13 +1492,27 @@ paths:
           $ref: '#/components/responses/INVALID_QUERY'
         404:
           description: Database does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Database does not exist
+                  code:
+                    type: string
+                    example: 0D0DU2
     post:
       tags:
       - SPARQL
       summary: Explain SPARQL query
       operationId: explainQueryPost
       parameters:
-      - $ref: '#/components/parameters/db'
+      - name: db
+        $ref: '#/components/parameters/db'
       requestBody:
         content:
           application/sparql-query:
@@ -1194,6 +1540,187 @@ paths:
           $ref: '#/components/responses/INVALID_QUERY'
         404:
           description: Database does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Database does not exist
+                  code:
+                    type: string
+                    example: 0D0DU2
+  /{db}/query:
+    get:
+      tags:
+      - SPARQL
+      summary: Perform SPARQL query
+      operationId: get
+      parameters:
+      - name: db
+        $ref: '#/components/parameters/db'
+      - $ref: '#/components/parameters/query'
+      - $ref: '#/components/parameters/reasoning'
+      responses:
+        200:
+          description: Query results
+          content:
+            application/sparql-results+xml:
+              examples:
+                SPARQL_RESULTS_XML:
+                  description: SPARQL_RESULTS_XML
+                  $ref: '#/components/examples/SPARQL_RESULTS_XML'
+            application/sparql-results+json:
+              schema:
+                $ref: '#/components/schemas/SPARQL_RESULTS_JSON'
+            text/csv:
+              examples:
+                SPARQL_RESULTS_CSV:
+                  description: SPARQL_RESULTS_CSV
+                  $ref: '#/components/examples/SPARQL_RESULTS_CSV'
+            text/tsv:
+              examples:
+                SPARQL_RESULTS_TSV:
+                  description: SPARQL_RESULTS_TSV
+                  $ref: '#/components/examples/SPARQL_RESULTS_TSV'
+            text/turtle:
+              examples:
+                GENERIC_TURTLE:
+                  description: GENERIC_TURTLE
+                  $ref: '#/components/examples/GENERIC_TURTLE'
+            application/trig:
+              examples:
+                GENERIC_TRIG:
+                  description: GENERIC_TRIG
+                  $ref: '#/components/examples/GENERIC_TRIG'
+            application/rdf+xml:
+              examples:
+                GENERIC_RDFXML:
+                  description: GENERIC_RDFXML
+                  $ref: '#/components/examples/GENERIC_RDFXML'
+            application/n-triples:
+              examples:
+                GENERIC_NTRIPLES:
+                  description: GENERIC_NTRIPLES
+                  $ref: '#/components/examples/GENERIC_NTRIPLES'
+            application/n-quads:
+              examples:
+                GENERIC_NQUADS:
+                  description: GENERIC_NQUADS
+                  $ref: '#/components/examples/GENERIC_NQUADS'
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/GENERIC_JSONLD'
+        400:
+          $ref: '#/components/responses/INVALID_QUERY'
+        406:
+          description: Accept header invalid for type of query sent
+        404:
+          description: Database does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Database does not exist
+                  code:
+                    type: string
+                    example: 0D0DU2
+    post:
+      tags:
+      - SPARQL
+      summary: Perform SPARQL query
+      operationId: post
+      parameters:
+      - name: db
+        $ref: '#/components/parameters/db'
+      requestBody:
+        content:
+          application/sparql-query:
+            examples:
+              SPARQL_QUERY:
+                description: SPARQL_QUERY
+                $ref: '#/components/examples/SPARQL_QUERY'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SPARQL_QUERY'
+        required: true
+      responses:
+        200:
+          description: Query results
+          content:
+            application/sparql-results+xml:
+              examples:
+                SPARQL_RESULTS_XML:
+                  description: SPARQL_RESULTS_XML
+                  $ref: '#/components/examples/SPARQL_RESULTS_XML'
+            application/sparql-results+json:
+              schema:
+                $ref: '#/components/schemas/SPARQL_RESULTS_JSON'
+            text/csv:
+              examples:
+                SPARQL_RESULTS_CSV:
+                  description: SPARQL_RESULTS_CSV
+                  $ref: '#/components/examples/SPARQL_RESULTS_CSV'
+            text/tsv:
+              examples:
+                SPARQL_RESULTS_TSV:
+                  description: SPARQL_RESULTS_TSV
+                  $ref: '#/components/examples/SPARQL_RESULTS_TSV'
+            text/turtle:
+              examples:
+                GENERIC_TURTLE:
+                  description: GENERIC_TURTLE
+                  $ref: '#/components/examples/GENERIC_TURTLE'
+            application/trig:
+              examples:
+                GENERIC_TRIG:
+                  description: GENERIC_TRIG
+                  $ref: '#/components/examples/GENERIC_TRIG'
+            application/rdf+xml:
+              examples:
+                GENERIC_RDFXML:
+                  description: GENERIC_RDFXML
+                  $ref: '#/components/examples/GENERIC_RDFXML'
+            application/n-triples:
+              examples:
+                GENERIC_NTRIPLES:
+                  description: GENERIC_NTRIPLES
+                  $ref: '#/components/examples/GENERIC_NTRIPLES'
+            application/n-quads:
+              examples:
+                GENERIC_NQUADS:
+                  description: GENERIC_NQUADS
+                  $ref: '#/components/examples/GENERIC_NQUADS'
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/GENERIC_JSONLD'
+        400:
+          $ref: '#/components/responses/INVALID_QUERY'
+        406:
+          description: Accept header invalid for type of query sent
+        404:
+          description: Database does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Database does not exist
+                  code:
+                    type: string
+                    example: 0D0DU2
   /{db}/update:
     get:
       tags:
@@ -1201,7 +1728,8 @@ paths:
       summary: Perform SPARQL Update query
       operationId: updateGet
       parameters:
-      - $ref: '#/components/parameters/db'
+      - name: db
+        $ref: '#/components/parameters/db'
       - $ref: '#/components/parameters/query'
       - $ref: '#/components/parameters/reasoning'
       responses:
@@ -1213,13 +1741,29 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GENERIC_RESPONSE_ERROR_MESSAGE'
+        404:
+          description: Database does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Database does not exist
+                  code:
+                    type: string
+                    example: 0D0DU2
     post:
       tags:
       - SPARQL
       summary: Perform SPARQL Update query
       operationId: updatePost
       parameters:
-      - $ref: '#/components/parameters/db'
+      - name: db
+        $ref: '#/components/parameters/db'
       requestBody:
         content:
           application/sparql-update:
@@ -1240,6 +1784,21 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GENERIC_RESPONSE_ERROR_MESSAGE'
+        404:
+          description: Database does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Database does not exist
+                  code:
+                    type: string
+                    example: 0D0DU2
   /admin/status/prometheus:
     get:
       tags:
@@ -1264,6 +1823,34 @@ paths:
           description: Server metrics
           content:
             application/json: {}
+  /admin/users/{user}/superuser:
+    get:
+      tags:
+      - Users
+      summary: User is Superuser
+      description: Return whether or not a user is a Superuser
+      operationId: isSuper
+      parameters:
+      - name: user
+        $ref: '#/components/parameters/user'
+      responses:
+        200:
+          $ref: '#/components/responses/SUPERUSER'
+        404:
+          description: User does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: User does not exist
+                  code:
+                    type: string
+                    example: SERNF2
   /admin/users:
     get:
       tags:
@@ -1293,19 +1880,34 @@ paths:
       description: Return whether or not a user is enabled (active) in the system
       operationId: userEnabled
       parameters:
-      - $ref: '#/components/parameters/user'
+      - name: user
+        $ref: '#/components/parameters/user'
       responses:
         200:
           $ref: '#/components/responses/ENABLED'
         404:
-          description: User not found
+          description: User does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: User does not exist
+                  code:
+                    type: string
+                    example: SERNF2
     put:
       tags:
       - Users
       summary: Enable/Disable User
       operationId: setUserEnabled
       parameters:
-      - $ref: '#/components/parameters/user'
+      - name: user
+        $ref: '#/components/parameters/user'
       requestBody:
         $ref: '#/components/requestBodies/ENABLED'
       responses:
@@ -1314,7 +1916,20 @@ paths:
         400:
           $ref: '#/components/responses/MALFORMED_REQUEST_400'
         404:
-          description: User not found
+          description: User does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: User does not exist
+                  code:
+                    type: string
+                    example: SERNF2
   /admin/users/{user}/pwd:
     put:
       tags:
@@ -1322,7 +1937,8 @@ paths:
       summary: Change user's password
       operationId: changePassword
       parameters:
-      - $ref: '#/components/parameters/user'
+      - name: user
+        $ref: '#/components/parameters/user'
       requestBody:
         $ref: '#/components/requestBodies/USER_PASSWD'
       responses:
@@ -1331,7 +1947,20 @@ paths:
         400:
           $ref: '#/components/responses/MALFORMED_REQUEST_400'
         404:
-          description: User not found
+          description: User does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: User does not exist
+                  code:
+                    type: string
+                    example: SERNF2
   /admin/users/{user}/roles:
     get:
       tags:
@@ -1340,12 +1969,26 @@ paths:
       description: Retrieve a list of all roles explicitly assigned to a user
       operationId: getUserRoles
       parameters:
-      - $ref: '#/components/parameters/user'
+      - name: user
+        $ref: '#/components/parameters/user'
       responses:
         200:
           $ref: '#/components/responses/ROLE_LIST'
         404:
-          description: User not found
+          description: User does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: User does not exist
+                  code:
+                    type: string
+                    example: SERNF2
     put:
       tags:
       - Users
@@ -1353,7 +1996,8 @@ paths:
       description: Overwrite the list of roles explicitly assigned to a user
       operationId: setUserRoles
       parameters:
-      - $ref: '#/components/parameters/user'
+      - name: user
+        $ref: '#/components/parameters/user'
       requestBody:
         $ref: '#/components/requestBodies/ROLE_LIST'
       responses:
@@ -1362,14 +2006,28 @@ paths:
         400:
           $ref: '#/components/responses/MALFORMED_REQUEST_400'
         404:
-          description: User not found
+          description: User does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: User does not exist
+                  code:
+                    type: string
+                    example: SERNF2
     post:
       tags:
       - Users
       summary: Add role to user
       operationId: addUserRole
       parameters:
-      - $ref: '#/components/parameters/user'
+      - name: user
+        $ref: '#/components/parameters/user'
       requestBody:
         $ref: '#/components/requestBodies/ROLENAME'
       responses:
@@ -1378,7 +2036,49 @@ paths:
         400:
           $ref: '#/components/responses/MALFORMED_REQUEST_400'
         404:
-          description: User/Role not found
+          description: User does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: User does not exist
+                  code:
+                    type: string
+                    example: SERNF2
+  /admin/users/{user}/roles/{role}:
+    delete:
+      tags:
+      - Users
+      summary: Remove role from user
+      operationId: removeUserRole
+      parameters:
+      - name: user
+        $ref: '#/components/parameters/user'
+      - name: role
+        $ref: '#/components/parameters/role'
+      responses:
+        204:
+          description: Role successfully removed
+        404:
+          description: Role does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Role does not exist
+                  code:
+                    type: string
+                    example: SERNF2
   /admin/users/{user}:
     get:
       tags:
@@ -1387,52 +2087,80 @@ paths:
       description: Retrieve attributes, roles, and permissions of a User
       operationId: getUser
       parameters:
-      - $ref: '#/components/parameters/user'
+      - name: user
+        $ref: '#/components/parameters/user'
       responses:
         200:
           $ref: '#/components/responses/USER'
         404:
-          description: User not found
+          description: User does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: User does not exist
+                  code:
+                    type: string
+                    example: SERNF2
     delete:
       tags:
       - Users
       summary: Delete User
       operationId: deleteUser
       parameters:
-      - $ref: '#/components/parameters/user'
+      - name: user
+        $ref: '#/components/parameters/user'
       responses:
         204:
           description: User deleted
         404:
-          description: User not found
-  /admin/users/{user}/superuser:
+          description: User does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: User does not exist
+                  code:
+                    type: string
+                    example: SERNF2
+  /admin/roles//{role}/users:
     get:
       tags:
-      - Users
-      summary: User is Superuser
-      description: Return whether or not a user is a Superuser
-      operationId: isSuper
+      - Roles
+      summary: Get users with role
+      description: Returns a list of all users that have a specific role
+      operationId: getUsersWithRole
       parameters:
-      - $ref: '#/components/parameters/user'
+      - name: role
+        $ref: '#/components/parameters/role'
       responses:
         200:
-          $ref: '#/components/responses/SUPERUSER'
+          $ref: '#/components/responses/USER_LIST'
         404:
-          description: User not found
-  /admin/users/{user}/roles/{role}:
-    delete:
-      tags:
-      - Users
-      summary: Remove role from user
-      operationId: removeUserRole
-      parameters:
-      - $ref: '#/components/parameters/user'
-      - $ref: '#/components/parameters/role'
-      responses:
-        204:
-          description: Role successfully removed
-        404:
-          description: User/Role not found
+          description: Role does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Role does not exist
+                  code:
+                    type: string
+                    example: SERNF2
   /admin/roles/{role}:
     delete:
       tags:
@@ -1440,7 +2168,8 @@ paths:
       summary: Delete role
       operationId: deleteRole
       parameters:
-      - $ref: '#/components/parameters/role'
+      - name: role
+        $ref: '#/components/parameters/role'
       - name: force
         in: query
         description: Whether to force delete if role is assigned to users
@@ -1450,7 +2179,20 @@ paths:
         204:
           description: Role deleted
         404:
-          description: Role not found
+          description: Role does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Role does not exist
+                  code:
+                    type: string
+                    example: SERNF2
   /admin/roles:
     get:
       tags:
@@ -1473,20 +2215,38 @@ paths:
           description: Role added
         400:
           $ref: '#/components/responses/MALFORMED_REQUEST_400'
-  /admin/roles//{role}/users:
-    get:
+  /admin/permissions/user/{user}/delete:
+    post:
       tags:
-      - Roles
-      summary: Get users with role
-      description: Returns a list of all users that have a specific role
-      operationId: getUsersWithRole
+      - Permissions
+      summary: Delete User Permission
+      description: Revoke a permission from a given user
+      operationId: deleteUserPermission
       parameters:
-      - $ref: '#/components/parameters/role'
+      - name: user
+        $ref: '#/components/parameters/user'
+      requestBody:
+        $ref: '#/components/requestBodies/PERMISSION'
       responses:
-        200:
-          $ref: '#/components/responses/USER_LIST'
+        201:
+          description: Permission removed
+        400:
+          $ref: '#/components/responses/MALFORMED_REQUEST_400'
         404:
-          description: Role not found
+          description: User does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: User does not exist
+                  code:
+                    type: string
+                    example: SERNF2
   /admin/permissions/user/{user}:
     get:
       tags:
@@ -1495,12 +2255,26 @@ paths:
       description: Get all permissions assigned to a given user
       operationId: getUserPermissions
       parameters:
-      - $ref: '#/components/parameters/user'
+      - name: user
+        $ref: '#/components/parameters/user'
       responses:
         200:
           $ref: '#/components/responses/PERMISSION_LIST'
         404:
-          description: User not found
+          description: User does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: User does not exist
+                  code:
+                    type: string
+                    example: SERNF2
     put:
       tags:
       - Permissions
@@ -1508,7 +2282,8 @@ paths:
       description: Grant a permission directly to a specified user
       operationId: addUserPermission
       parameters:
-      - $ref: '#/components/parameters/user'
+      - name: user
+        $ref: '#/components/parameters/user'
       requestBody:
         $ref: '#/components/requestBodies/PERMISSION'
       responses:
@@ -1517,7 +2292,111 @@ paths:
         400:
           $ref: '#/components/responses/MALFORMED_REQUEST_400'
         404:
-          description: User not found
+          description: User does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: User does not exist
+                  code:
+                    type: string
+                    example: SERNF2
+  /admin/permissions/role/{role}/delete:
+    post:
+      tags:
+      - Permissions
+      summary: Delete Role Permission
+      description: Remove a permission from a given role
+      operationId: deleteRolePermission
+      parameters:
+      - name: role
+        $ref: '#/components/parameters/role'
+      requestBody:
+        $ref: '#/components/requestBodies/PERMISSION'
+      responses:
+        201:
+          description: Permission removed
+        400:
+          $ref: '#/components/responses/MALFORMED_REQUEST_400'
+        404:
+          description: Role does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Role does not exist
+                  code:
+                    type: string
+                    example: SERNF2
+  /admin/permissions/role/{role}:
+    get:
+      tags:
+      - Permissions
+      summary: Get role permissions
+      description: Get all permissions attributed to a given role
+      operationId: getRolePermissions
+      parameters:
+      - name: role
+        $ref: '#/components/parameters/role'
+      responses:
+        200:
+          $ref: '#/components/responses/PERMISSION_LIST'
+        404:
+          description: Role does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Role does not exist
+                  code:
+                    type: string
+                    example: SERNF2
+    put:
+      tags:
+      - Permissions
+      summary: Add Role Permission
+      description: Add a permission to a specified role
+      operationId: addRolePermission
+      parameters:
+      - name: role
+        $ref: '#/components/parameters/role'
+      requestBody:
+        $ref: '#/components/requestBodies/PERMISSION'
+      responses:
+        201:
+          description: Permission added
+        400:
+          $ref: '#/components/responses/MALFORMED_REQUEST_400'
+        404:
+          description: Role does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Role does not exist
+                  code:
+                    type: string
+                    example: SERNF2
   /admin/permissions/effective/user/{user}:
     get:
       tags:
@@ -1527,80 +2406,27 @@ paths:
         by assigned roles
       operationId: getEffectiveUserPermissions
       parameters:
-      - $ref: '#/components/parameters/user'
+      - name: user
+        $ref: '#/components/parameters/user'
       responses:
         200:
           $ref: '#/components/responses/PERMISSION_LIST'
         404:
-          description: User not found
-  /admin/permissions/user/{user}/delete:
-    post:
-      tags:
-      - Permissions
-      summary: Delete User Permission
-      description: Revoke a permission from a given user
-      operationId: deleteUserPermission
-      parameters:
-      - $ref: '#/components/parameters/user'
-      requestBody:
-        $ref: '#/components/requestBodies/PERMISSION'
-      responses:
-        201:
-          description: Permission removed
-        400:
-          $ref: '#/components/responses/MALFORMED_REQUEST_400'
-        404:
-          description: Permission not found
-  /admin/permissions/role/{role}/delete:
-    post:
-      tags:
-      - Permissions
-      summary: Delete Role Permission
-      description: Remove a permission from a given role
-      operationId: deleteRolePermission
-      parameters:
-      - $ref: '#/components/parameters/role'
-      requestBody:
-        $ref: '#/components/requestBodies/PERMISSION'
-      responses:
-        201:
-          description: Permission removed
-        400:
-          $ref: '#/components/responses/MALFORMED_REQUEST_400'
-        404:
-          description: Permission not found
-  /admin/permissions/role/{role}:
-    get:
-      tags:
-      - Permissions
-      summary: Get role permissions
-      description: Get all permissions attributed to a given role
-      operationId: getRolePermissions
-      parameters:
-      - $ref: '#/components/parameters/role'
-      responses:
-        200:
-          $ref: '#/components/responses/PERMISSION_LIST'
-        404:
-          description: Role not found
-    put:
-      tags:
-      - Permissions
-      summary: Add Role Permission
-      description: Add a permission to a specified role
-      operationId: addRolePermission
-      parameters:
-      - $ref: '#/components/parameters/role'
-      requestBody:
-        $ref: '#/components/requestBodies/PERMISSION'
-      responses:
-        201:
-          description: Permission added
-        400:
-          $ref: '#/components/responses/MALFORMED_REQUEST_400'
-        404:
-          description: Role not found
-  /admin/queries/{query}:
+          description: User does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: User does not exist
+                  code:
+                    type: string
+                    example: SERNF2
+  /admin/queries/{queryName}:
     get:
       tags:
       - Queries
@@ -1608,34 +2434,52 @@ paths:
       description: Get details of a specific query
       operationId: getQuery
       parameters:
-      - $ref: '#/components/parameters/query'
-      - name: query
-        in: path
-        description: Query name
-        required: true
-        schema:
-          type: string
+      - name: queryName
+        $ref: '#/components/parameters/queryName'
       responses:
         200:
           $ref: '#/components/responses/QUERY_LIST'
+        404:
+          description: Query does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Query does not exist
+                  code:
+                    type: string
+                    example: QEQNF2
     delete:
       tags:
       - Queries
       summary: Kill query
       operationId: killQuery
       parameters:
-      - $ref: '#/components/parameters/query'
-      - name: query
-        in: path
-        description: Query name
-        required: true
-        schema:
-          type: string
+      - name: queryName
+        $ref: '#/components/parameters/queryName'
       responses:
         204:
           description: Query killed
         404:
-          description: Query not found
+          description: Query does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Query does not exist
+                  code:
+                    type: string
+                    example: QEQNF2
   /admin/queries:
     get:
       tags:
@@ -1646,70 +2490,6 @@ paths:
       responses:
         200:
           $ref: '#/components/responses/QUERY_LIST'
-  /admin/queries/stored/{query}:
-    get:
-      tags:
-      - Queries
-      summary: Get stored query
-      operationId: getStoredQuery
-      parameters:
-      - $ref: '#/components/parameters/query'
-      - name: query
-        in: path
-        description: Query name
-        required: true
-        schema:
-          type: string
-      responses:
-        200:
-          description: RDF serialization of chosen stored query
-          content:
-            text/turtle:
-              examples:
-                STORED_QUERY_TURTLE:
-                  description: STORED_QUERY_TURTLE
-                  $ref: '#/components/examples/STORED_QUERY_TURTLE'
-            application/trig:
-              examples:
-                STORED_QUERY_TRIG:
-                  description: STORED_QUERY_TRIG
-                  $ref: '#/components/examples/STORED_QUERY_TRIG'
-            application/rdf+xml:
-              examples:
-                STORED_QUERY_RDFXML:
-                  description: STORED_QUERY_RDFXML
-                  $ref: '#/components/examples/STORED_QUERY_RDFXML'
-            application/n-triples:
-              examples:
-                STORED_QUERY_NTRIPLESQUADS:
-                  description: STORED_QUERY_NTRIPLESQUADS
-                  $ref: '#/components/examples/STORED_QUERY_NTRIPLESQUADS'
-            application/n-quads:
-              examples:
-                STORED_QUERY_NTRIPLESQUADS:
-                  description: STORED_QUERY_NTRIPLESQUADS
-                  $ref: '#/components/examples/STORED_QUERY_NTRIPLESQUADS'
-            application/ld+json: {}
-        404:
-          description: Query does not exist
-    delete:
-      tags:
-      - Queries
-      summary: Delete stored query
-      operationId: deleteStoredQuery
-      parameters:
-      - $ref: '#/components/parameters/query'
-      - name: query
-        in: path
-        description: Query name
-        required: true
-        schema:
-          type: string
-      responses:
-        204:
-          description: Query deleted
-        404:
-          description: Query does not exist
   /admin/queries/stored:
     get:
       tags:
@@ -1834,6 +2614,86 @@ paths:
           description: default response
           content:
             '*/*': {}
+  /admin/queries/stored/{storedQueryName}:
+    get:
+      tags:
+      - Queries
+      summary: Get stored query
+      operationId: getStoredQuery
+      parameters:
+      - name: storedQueryName
+        $ref: '#/components/parameters/storedQueryName'
+      responses:
+        200:
+          description: RDF serialization of chosen stored query
+          content:
+            text/turtle:
+              examples:
+                STORED_QUERY_TURTLE:
+                  description: STORED_QUERY_TURTLE
+                  $ref: '#/components/examples/STORED_QUERY_TURTLE'
+            application/trig:
+              examples:
+                STORED_QUERY_TRIG:
+                  description: STORED_QUERY_TRIG
+                  $ref: '#/components/examples/STORED_QUERY_TRIG'
+            application/rdf+xml:
+              examples:
+                STORED_QUERY_RDFXML:
+                  description: STORED_QUERY_RDFXML
+                  $ref: '#/components/examples/STORED_QUERY_RDFXML'
+            application/n-triples:
+              examples:
+                STORED_QUERY_NTRIPLESQUADS:
+                  description: STORED_QUERY_NTRIPLESQUADS
+                  $ref: '#/components/examples/STORED_QUERY_NTRIPLESQUADS'
+            application/n-quads:
+              examples:
+                STORED_QUERY_NTRIPLESQUADS:
+                  description: STORED_QUERY_NTRIPLESQUADS
+                  $ref: '#/components/examples/STORED_QUERY_NTRIPLESQUADS'
+            application/ld+json: {}
+        404:
+          description: Stored query does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Stored query does not exist
+                  code:
+                    type: string
+                    example: QEQNF2
+    delete:
+      tags:
+      - Queries
+      summary: Delete stored query
+      operationId: deleteStoredQuery
+      parameters:
+      - name: storedQueryName
+        $ref: '#/components/parameters/storedQueryName'
+      responses:
+        204:
+          description: Query deleted
+        404:
+          description: Stored query does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Stored query does not exist
+                  code:
+                    type: string
+                    example: QEQNF2
   /admin/functions/stored:
     get:
       tags:
@@ -1843,7 +2703,7 @@ paths:
         the function specified in the query string parameter
       operationId: exportStoredFunctions
       parameters:
-      - name: name
+      - name: functionName
         in: query
         description: The name of the stored function
         schema:
@@ -1872,13 +2732,8 @@ paths:
                 $ref: '#/components/examples/STORED_FUNCTION'
         required: true
       responses:
-        200:
-          content:
-            text/plain:
-              examples:
-                STORED_FUNCTION:
-                  description: STORED_FUNCTION
-                  $ref: '#/components/examples/STORED_FUNCTION'
+        204:
+          description: Function added
         422:
           description: Function with the given name exists
     delete:
@@ -1889,7 +2744,7 @@ paths:
         function specified in the query string parameter
       operationId: deleteStoredFunction
       parameters:
-      - name: name
+      - name: functionName
         in: query
         description: The name of the stored function
         schema:
@@ -1899,14 +2754,15 @@ paths:
           description: Function deleted
         400:
           description: Function does not exist
-  /admin/functions/stored/{name}:
+  /admin/functions/stored/{functionName}:
     get:
       tags:
       - Stored Functions
       summary: Get Stored Function
       operationId: getStoredFunction
       parameters:
-      - $ref: '#/components/parameters/name'
+      - name: functionName
+        $ref: '#/components/parameters/functionName'
       responses:
         200:
           content:
@@ -1917,6 +2773,21 @@ paths:
                   $ref: '#/components/examples/STORED_FUNCTION'
         400:
           description: Function does not exist
+        404:
+          description: Stored function does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Stored function does not exist
+                  code:
+                    type: string
+                    example: QEFNF2
     delete:
       tags:
       - Stored Functions
@@ -1924,12 +2795,1766 @@ paths:
       description: Delete the stored function specified in the query string parameter
       operationId: deleteStoredFunctionNamed
       parameters:
-      - $ref: '#/components/parameters/name'
+      - name: functionName
+        $ref: '#/components/parameters/functionName'
       responses:
         204:
           description: Function deleted
         400:
           description: Function does not exist
+        404:
+          description: Stored function does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Stored function does not exist
+                  code:
+                    type: string
+                    example: QEFNF2
+  /{db}/docs:
+    post:
+      tags:
+      - BITES
+      summary: Add document(s) to document store
+      operationId: modifyDocument
+      parameters:
+      - name: db
+        $ref: '#/components/parameters/db'
+      requestBody:
+        description: A multipart request with any number of documents
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BITES_POST_DOC'
+      responses:
+        201:
+          description: Document(s) added
+          headers:
+            Location:
+              description: Relative URL of the added document(s)
+              style: simple
+        404:
+          description: Database does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Database does not exist
+                  code:
+                    type: string
+                    example: 0D0DU2
+    delete:
+      tags:
+      - BITES
+      summary: Clear document store
+      operationId: clearStore
+      parameters:
+      - name: db
+        $ref: '#/components/parameters/db'
+      responses:
+        204:
+          description: Document store cleared
+        404:
+          description: Database does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Database does not exist
+                  code:
+                    type: string
+                    example: 0D0DU2
+  /{db}/docs/{docName}:
+    get:
+      tags:
+      - BITES
+      summary: Retrieve a document from the document store
+      operationId: getDocument
+      parameters:
+      - name: db
+        $ref: '#/components/parameters/db'
+      - name: docName
+        $ref: '#/components/parameters/docName'
+      responses:
+        200:
+          description: The requested document, in its native format
+        404:
+          description: Document does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Document does not exist
+                  code:
+                    type: string
+                    example: BIUDE2
+    delete:
+      tags:
+      - BITES
+      summary: Delete a document from the document store
+      operationId: removeDocument
+      parameters:
+      - name: db
+        $ref: '#/components/parameters/db'
+      - name: docName
+        $ref: '#/components/parameters/docName'
+      responses:
+        204:
+          description: Document deleted
+        404:
+          description: Document does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Document does not exist
+                  code:
+                    type: string
+                    example: BIUDE2
+  /{db}/docs/reindex:
+    post:
+      tags:
+      - BITES
+      summary: Reindex document store
+      operationId: reindex
+      parameters:
+      - name: db
+        $ref: '#/components/parameters/db'
+      responses:
+        204:
+          description: Document store reindexed
+        404:
+          description: Database does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Database does not exist
+                  code:
+                    type: string
+                    example: 0D0DU2
+  /{db}/docs/size:
+    get:
+      tags:
+      - BITES
+      summary: Get size of document store
+      operationId: getStoreSize
+      parameters:
+      - name: db
+        $ref: '#/components/parameters/db'
+      responses:
+        200:
+          content:
+            text/plain:
+              examples:
+                PLAINTEXT_INT:
+                  description: PLAINTEXT_INT
+                  $ref: '#/components/examples/PLAINTEXT_INT'
+        404:
+          description: Database does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Database does not exist
+                  code:
+                    type: string
+                    example: 0D0DU2
+  /{db}/graphql/{schema}:
+    get:
+      tags:
+      - GraphQL
+      summary: Perform GraphQL query with schema
+      operationId: queryGetWithSchema
+      parameters:
+      - name: db
+        $ref: '#/components/parameters/db'
+      - name: query
+        in: query
+        required: true
+        schema:
+          $ref: '#/components/schemas/GRAPHQL_QUERY'
+      - name: schema
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        200:
+          $ref: '#/components/responses/GRAPHQL_QUERY_RESULT'
+        404:
+          description: Database does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Database does not exist
+                  code:
+                    type: string
+                    example: 0D0DU2
+    post:
+      tags:
+      - GraphQL
+      summary: Perform GraphQL query with schema
+      operationId: queryPostWithSchema
+      parameters:
+      - name: db
+        $ref: '#/components/parameters/db'
+      - name: schema
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GRAPHQL_QUERY_POST'
+        required: true
+      responses:
+        200:
+          $ref: '#/components/responses/GRAPHQL_QUERY_RESULT'
+        404:
+          description: Database does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Database does not exist
+                  code:
+                    type: string
+                    example: 0D0DU2
+  /{db}/graphql:
+    get:
+      tags:
+      - GraphQL
+      summary: Perform GraphQL query
+      operationId: queryGet
+      parameters:
+      - name: db
+        $ref: '#/components/parameters/db'
+      - name: query
+        in: query
+        required: true
+        schema:
+          $ref: '#/components/schemas/GRAPHQL_QUERY'
+      responses:
+        200:
+          $ref: '#/components/responses/GRAPHQL_QUERY_RESULT'
+        404:
+          description: Database does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Database does not exist
+                  code:
+                    type: string
+                    example: 0D0DU2
+    post:
+      tags:
+      - GraphQL
+      summary: Perform GraphQL query
+      operationId: queryPost
+      parameters:
+      - name: db
+        $ref: '#/components/parameters/db'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GRAPHQL_QUERY_POST'
+        required: true
+      responses:
+        200:
+          $ref: '#/components/responses/GRAPHQL_QUERY_RESULT'
+        404:
+          description: Database does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Database does not exist
+                  code:
+                    type: string
+                    example: 0D0DU2
+  /{db}/icv/add:
+    post:
+      tags:
+      - Integrity Constraints
+      summary: Add constraint
+      operationId: addConstraint
+      parameters:
+      - name: db
+        $ref: '#/components/parameters/db'
+      requestBody:
+        description: Constraint in RDF
+        content:
+          text/turtle:
+            examples:
+              ICV_CONSTRAINT_TTL:
+                description: ICV_CONSTRAINT_TTL
+                $ref: '#/components/examples/ICV_CONSTRAINT_TTL'
+          application/trig:
+            examples:
+              ICV_CONSTRAINT_TTL:
+                description: ICV_CONSTRAINT_TTL
+                $ref: '#/components/examples/ICV_CONSTRAINT_TTL'
+          application/rdf+xml:
+            examples:
+              ICV_CONSTRAINT_RDFXML:
+                description: ICV_CONSTRAINT_RDFXML
+                $ref: '#/components/examples/ICV_CONSTRAINT_RDFXML'
+          application/n-triples:
+            examples:
+              ICV_CONSTRAINT_TTL:
+                description: ICV_CONSTRAINT_TTL
+                $ref: '#/components/examples/ICV_CONSTRAINT_TTL'
+          application/n-quads:
+            examples:
+              ICV_CONSTRAINT_TTL:
+                description: ICV_CONSTRAINT_TTL
+                $ref: '#/components/examples/ICV_CONSTRAINT_TTL'
+          application/ld+json:
+            examples:
+              ICV_CONSTRAINT_JSONLD:
+                description: ICV_CONSTRAINT_JSONLD
+                $ref: '#/components/examples/ICV_CONSTRAINT_JSONLD'
+        required: true
+      responses:
+        204:
+          description: Constraint added
+        404:
+          description: Database does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Database does not exist
+                  code:
+                    type: string
+                    example: 0D0DU2
+      x-sort-order:
+        group: "0"
+  /{db}/icv/convert:
+    post:
+      tags:
+      - Integrity Constraints
+      summary: Convert constraint
+      description: Takes a constraint as RDF and converts it to a SPARQL query that
+        can be run to determine if any data violates that constraint
+      operationId: convertConstraint
+      parameters:
+      - name: db
+        $ref: '#/components/parameters/db'
+      requestBody:
+        description: The constraint to be converted
+        content:
+          text/turtle:
+            examples:
+              ICV_CONSTRAINT_TTL:
+                description: ICV_CONSTRAINT_TTL
+                $ref: '#/components/examples/ICV_CONSTRAINT_TTL'
+          application/trig:
+            examples:
+              ICV_CONSTRAINT_TTL:
+                description: ICV_CONSTRAINT_TTL
+                $ref: '#/components/examples/ICV_CONSTRAINT_TTL'
+          application/rdf+xml:
+            examples:
+              ICV_CONSTRAINT_RDFXML:
+                description: ICV_CONSTRAINT_RDFXML
+                $ref: '#/components/examples/ICV_CONSTRAINT_RDFXML'
+          application/n-triples:
+            examples:
+              ICV_CONSTRAINT_TTL:
+                description: ICV_CONSTRAINT_TTL
+                $ref: '#/components/examples/ICV_CONSTRAINT_TTL'
+          application/n-quads:
+            examples:
+              ICV_CONSTRAINT_TTL:
+                description: ICV_CONSTRAINT_TTL
+                $ref: '#/components/examples/ICV_CONSTRAINT_TTL'
+          application/ld+json:
+            examples:
+              ICV_CONSTRAINT_JSONLD:
+                description: ICV_CONSTRAINT_JSONLD
+                $ref: '#/components/examples/ICV_CONSTRAINT_JSONLD'
+        required: true
+      responses:
+        200:
+          description: Converted SPARQL query
+          content:
+            text/plain:
+              examples:
+                ICV_SPARQL_QUERY:
+                  description: ICV_SPARQL_QUERY
+                  $ref: '#/components/examples/ICV_SPARQL_QUERY'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ICV_SPARQL_QUERY'
+        404:
+          description: Database does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Database does not exist
+                  code:
+                    type: string
+                    example: 0D0DU2
+      x-sort-order:
+        group: "0"
+  /{db}/icv/clear:
+    post:
+      tags:
+      - Integrity Constraints
+      summary: Clear constraints
+      operationId: clearConstraints
+      parameters:
+      - name: db
+        $ref: '#/components/parameters/db'
+      responses:
+        204:
+          description: Constraints cleared
+        404:
+          description: Database does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Database does not exist
+                  code:
+                    type: string
+                    example: 0D0DU2
+      x-sort-order:
+        group: "0"
+  /{db}/icv:
+    get:
+      tags:
+      - Integrity Constraints
+      summary: List constraints
+      operationId: getConstraints
+      parameters:
+      - name: db
+        $ref: '#/components/parameters/db'
+      responses:
+        200:
+          description: Constraints in RDF format
+          content:
+            text/turtle:
+              examples:
+                ICV_CONSTRAINT_TTL:
+                  description: ICV_CONSTRAINT_TTL
+                  $ref: '#/components/examples/ICV_CONSTRAINT_TTL'
+            application/trig:
+              examples:
+                ICV_CONSTRAINT_TTL:
+                  description: ICV_CONSTRAINT_TTL
+                  $ref: '#/components/examples/ICV_CONSTRAINT_TTL'
+            application/rdf+xml:
+              examples:
+                ICV_CONSTRAINT_RDFXML:
+                  description: ICV_CONSTRAINT_RDFXML
+                  $ref: '#/components/examples/ICV_CONSTRAINT_RDFXML'
+            application/n-triples:
+              examples:
+                ICV_CONSTRAINT_TTL:
+                  description: ICV_CONSTRAINT_TTL
+                  $ref: '#/components/examples/ICV_CONSTRAINT_TTL'
+            application/n-quads:
+              examples:
+                ICV_CONSTRAINT_TTL:
+                  description: ICV_CONSTRAINT_TTL
+                  $ref: '#/components/examples/ICV_CONSTRAINT_TTL'
+            application/ld+json:
+              examples:
+                ICV_CONSTRAINT_JSONLD:
+                  description: ICV_CONSTRAINT_JSONLD
+                  $ref: '#/components/examples/ICV_CONSTRAINT_JSONLD'
+        404:
+          description: Database does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Database does not exist
+                  code:
+                    type: string
+                    example: 0D0DU2
+      x-sort-order:
+        group: "0"
+  /{db}/icv/remove:
+    post:
+      tags:
+      - Integrity Constraints
+      summary: Remove constraint
+      operationId: removeConstraint
+      parameters:
+      - name: db
+        $ref: '#/components/parameters/db'
+      requestBody:
+        description: Constraint in RDF
+        content:
+          text/turtle:
+            examples:
+              ICV_CONSTRAINT_TTL:
+                description: ICV_CONSTRAINT_TTL
+                $ref: '#/components/examples/ICV_CONSTRAINT_TTL'
+          application/trig:
+            examples:
+              ICV_CONSTRAINT_TTL:
+                description: ICV_CONSTRAINT_TTL
+                $ref: '#/components/examples/ICV_CONSTRAINT_TTL'
+          application/rdf+xml:
+            examples:
+              ICV_CONSTRAINT_RDFXML:
+                description: ICV_CONSTRAINT_RDFXML
+                $ref: '#/components/examples/ICV_CONSTRAINT_RDFXML'
+          application/n-triples:
+            examples:
+              ICV_CONSTRAINT_TTL:
+                description: ICV_CONSTRAINT_TTL
+                $ref: '#/components/examples/ICV_CONSTRAINT_TTL'
+          application/n-quads:
+            examples:
+              ICV_CONSTRAINT_TTL:
+                description: ICV_CONSTRAINT_TTL
+                $ref: '#/components/examples/ICV_CONSTRAINT_TTL'
+          application/ld+json:
+            examples:
+              ICV_CONSTRAINT_JSONLD:
+                description: ICV_CONSTRAINT_JSONLD
+                $ref: '#/components/examples/ICV_CONSTRAINT_JSONLD'
+        required: true
+      responses:
+        204:
+          description: Constraint removed
+        404:
+          description: Database does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Database does not exist
+                  code:
+                    type: string
+                    example: 0D0DU2
+      x-sort-order:
+        group: "0"
+  /{db}/icv/validate:
+    post:
+      tags:
+      - Integrity Constraints
+      summary: Validate constraints
+      description: Determine whether or not the given constraints are valid
+      operationId: validate
+      parameters:
+      - name: db
+        $ref: '#/components/parameters/db'
+      requestBody:
+        description: The constraint to be validated
+        content:
+          text/turtle:
+            examples:
+              ICV_CONSTRAINT_TTL:
+                description: ICV_CONSTRAINT_TTL
+                $ref: '#/components/examples/ICV_CONSTRAINT_TTL'
+          application/trig:
+            examples:
+              ICV_CONSTRAINT_TTL:
+                description: ICV_CONSTRAINT_TTL
+                $ref: '#/components/examples/ICV_CONSTRAINT_TTL'
+          application/rdf+xml:
+            examples:
+              ICV_CONSTRAINT_RDFXML:
+                description: ICV_CONSTRAINT_RDFXML
+                $ref: '#/components/examples/ICV_CONSTRAINT_RDFXML'
+          application/n-triples:
+            examples:
+              ICV_CONSTRAINT_TTL:
+                description: ICV_CONSTRAINT_TTL
+                $ref: '#/components/examples/ICV_CONSTRAINT_TTL'
+          application/n-quads:
+            examples:
+              ICV_CONSTRAINT_TTL:
+                description: ICV_CONSTRAINT_TTL
+                $ref: '#/components/examples/ICV_CONSTRAINT_TTL'
+          application/ld+json:
+            examples:
+              ICV_CONSTRAINT_JSONLD:
+                description: ICV_CONSTRAINT_JSONLD
+                $ref: '#/components/examples/ICV_CONSTRAINT_JSONLD'
+        required: true
+      responses:
+        200:
+          content:
+            text/boolean: {}
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ICV_VALIDATION'
+        404:
+          description: Database does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Database does not exist
+                  code:
+                    type: string
+                    example: 0D0DU2
+      x-sort-order:
+        group: "1"
+        order: "1"
+  /{db}/icv/{txid}/validate:
+    post:
+      tags:
+      - Integrity Constraints
+      summary: Validate constraints in transaction
+      description: Determine whether or not the given constraints are valid
+      operationId: validateInTx
+      parameters:
+      - name: db
+        $ref: '#/components/parameters/db'
+      - name: txid
+        $ref: '#/components/parameters/txid'
+      requestBody:
+        description: The constraint to be validated
+        content:
+          text/turtle:
+            examples:
+              ICV_CONSTRAINT_TTL:
+                description: ICV_CONSTRAINT_TTL
+                $ref: '#/components/examples/ICV_CONSTRAINT_TTL'
+          application/trig:
+            examples:
+              ICV_CONSTRAINT_TTL:
+                description: ICV_CONSTRAINT_TTL
+                $ref: '#/components/examples/ICV_CONSTRAINT_TTL'
+          application/rdf+xml:
+            examples:
+              ICV_CONSTRAINT_RDFXML:
+                description: ICV_CONSTRAINT_RDFXML
+                $ref: '#/components/examples/ICV_CONSTRAINT_RDFXML'
+          application/n-triples:
+            examples:
+              ICV_CONSTRAINT_TTL:
+                description: ICV_CONSTRAINT_TTL
+                $ref: '#/components/examples/ICV_CONSTRAINT_TTL'
+          application/n-quads:
+            examples:
+              ICV_CONSTRAINT_TTL:
+                description: ICV_CONSTRAINT_TTL
+                $ref: '#/components/examples/ICV_CONSTRAINT_TTL'
+          application/ld+json:
+            examples:
+              ICV_CONSTRAINT_JSONLD:
+                description: ICV_CONSTRAINT_JSONLD
+                $ref: '#/components/examples/ICV_CONSTRAINT_JSONLD'
+        required: true
+      responses:
+        200:
+          content:
+            text/boolean: {}
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ICV_VALIDATION'
+        404:
+          description: Transaction does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Transaction does not exist
+                  code:
+                    type: string
+                    example: 0D0TU2
+      x-sort-order:
+        group: "1"
+        order: "2"
+  /{db}/icv/violations:
+    post:
+      tags:
+      - Integrity Constraints
+      summary: Show violations
+      description: Show any violations that the database has with respect to the given
+        constraints
+      operationId: violations
+      parameters:
+      - name: db
+        $ref: '#/components/parameters/db'
+      requestBody:
+        description: The constraint to be checked
+        content:
+          text/turtle:
+            examples:
+              ICV_CONSTRAINT_TTL:
+                description: ICV_CONSTRAINT_TTL
+                $ref: '#/components/examples/ICV_CONSTRAINT_TTL'
+          application/trig:
+            examples:
+              ICV_CONSTRAINT_TTL:
+                description: ICV_CONSTRAINT_TTL
+                $ref: '#/components/examples/ICV_CONSTRAINT_TTL'
+          application/rdf+xml:
+            examples:
+              ICV_CONSTRAINT_RDFXML:
+                description: ICV_CONSTRAINT_RDFXML
+                $ref: '#/components/examples/ICV_CONSTRAINT_RDFXML'
+          application/n-triples:
+            examples:
+              ICV_CONSTRAINT_TTL:
+                description: ICV_CONSTRAINT_TTL
+                $ref: '#/components/examples/ICV_CONSTRAINT_TTL'
+          application/n-quads:
+            examples:
+              ICV_CONSTRAINT_TTL:
+                description: ICV_CONSTRAINT_TTL
+                $ref: '#/components/examples/ICV_CONSTRAINT_TTL'
+          application/ld+json:
+            examples:
+              ICV_CONSTRAINT_JSONLD:
+                description: ICV_CONSTRAINT_JSONLD
+                $ref: '#/components/examples/ICV_CONSTRAINT_JSONLD'
+        required: true
+      responses:
+        200:
+          content:
+            multipart/mixed:
+              examples:
+                ICV_VIOLATIONS:
+                  description: ICV_VIOLATIONS
+                  $ref: '#/components/examples/ICV_VIOLATIONS'
+        404:
+          description: Database does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Database does not exist
+                  code:
+                    type: string
+                    example: 0D0DU2
+      x-sort-order:
+        group: "2"
+        order: "1"
+  /{db}/icv/{txid}/violations:
+    post:
+      tags:
+      - Integrity Constraints
+      summary: Show violations in transaction
+      description: Show any violations that the database has with respect to the given
+        constraints
+      operationId: violationsInTx
+      parameters:
+      - name: db
+        $ref: '#/components/parameters/db'
+      - name: txid
+        $ref: '#/components/parameters/txid'
+      requestBody:
+        description: The constraint to be checked
+        content:
+          text/turtle:
+            examples:
+              ICV_CONSTRAINT_TTL:
+                description: ICV_CONSTRAINT_TTL
+                $ref: '#/components/examples/ICV_CONSTRAINT_TTL'
+          application/trig:
+            examples:
+              ICV_CONSTRAINT_TTL:
+                description: ICV_CONSTRAINT_TTL
+                $ref: '#/components/examples/ICV_CONSTRAINT_TTL'
+          application/rdf+xml:
+            examples:
+              ICV_CONSTRAINT_RDFXML:
+                description: ICV_CONSTRAINT_RDFXML
+                $ref: '#/components/examples/ICV_CONSTRAINT_RDFXML'
+          application/n-triples:
+            examples:
+              ICV_CONSTRAINT_TTL:
+                description: ICV_CONSTRAINT_TTL
+                $ref: '#/components/examples/ICV_CONSTRAINT_TTL'
+          application/n-quads:
+            examples:
+              ICV_CONSTRAINT_TTL:
+                description: ICV_CONSTRAINT_TTL
+                $ref: '#/components/examples/ICV_CONSTRAINT_TTL'
+          application/ld+json:
+            examples:
+              ICV_CONSTRAINT_JSONLD:
+                description: ICV_CONSTRAINT_JSONLD
+                $ref: '#/components/examples/ICV_CONSTRAINT_JSONLD'
+        required: true
+      responses:
+        200:
+          content:
+            multipart/mixed:
+              examples:
+                ICV_VIOLATIONS:
+                  description: ICV_VIOLATIONS
+                  $ref: '#/components/examples/ICV_VIOLATIONS'
+        404:
+          description: Transaction does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Transaction does not exist
+                  code:
+                    type: string
+                    example: 0D0TU2
+      x-sort-order:
+        group: "2"
+        order: "2"
+  /{db}/icv/report:
+    post:
+      tags:
+      - Integrity Constraints
+      summary: SHACL validation report
+      description: Produces a SHACL validation report against the specified shape(s)
+      externalDocs:
+        url: https://www.w3.org/TR/shacl/#validation-report
+      operationId: validationReport
+      parameters:
+      - name: db
+        $ref: '#/components/parameters/db'
+      - name: shapes
+        in: query
+        description: SHACL shapes to validate
+        schema:
+          type: string
+      - name: nodes
+        in: query
+        description: SHACL focus node(s) to validate
+        schema:
+          type: string
+      - name: countLimit
+        in: query
+        description: Maximum number of violations to report
+        schema:
+          type: string
+      - name: shacl.targetClass.simple
+        in: query
+        schema:
+          $ref: '#/components/schemas/SHACL_TARGETCLASS_SIMPLE'
+      responses:
+        200:
+          description: SHACL validation report
+          content:
+            text/turtle:
+              examples:
+                GENERIC_TURTLE:
+                  description: GENERIC_TURTLE
+                  $ref: '#/components/examples/GENERIC_TURTLE'
+            application/trig:
+              examples:
+                GENERIC_TRIG:
+                  description: GENERIC_TRIG
+                  $ref: '#/components/examples/GENERIC_TRIG'
+            application/rdf+xml:
+              examples:
+                GENERIC_RDFXML:
+                  description: GENERIC_RDFXML
+                  $ref: '#/components/examples/GENERIC_RDFXML'
+            application/n-triples:
+              examples:
+                GENERIC_NTRIPLES:
+                  description: GENERIC_NTRIPLES
+                  $ref: '#/components/examples/GENERIC_NTRIPLES'
+            application/n-quads:
+              examples:
+                GENERIC_NQUADS:
+                  description: GENERIC_NQUADS
+                  $ref: '#/components/examples/GENERIC_NQUADS'
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/GENERIC_JSONLD'
+        404:
+          description: Database does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Database does not exist
+                  code:
+                    type: string
+                    example: 0D0DU2
+      x-sort-order:
+        group: "3"
+        order: "1"
+  /{db}/icv/{txid}/report:
+    post:
+      tags:
+      - Integrity Constraints
+      summary: SHACL validation report in transaction
+      description: Produces a SHACL validation report against the specified shape(s)
+      externalDocs:
+        url: https://www.w3.org/TR/shacl/#validation-report
+      operationId: validationReportInTx
+      parameters:
+      - name: db
+        $ref: '#/components/parameters/db'
+      - name: txid
+        $ref: '#/components/parameters/txid'
+      - name: shapes
+        in: query
+        description: SHACL shapes to validate
+        schema:
+          type: string
+      - name: nodes
+        in: query
+        description: SHACL focus node(s) to validate
+        schema:
+          type: string
+      - name: countLimit
+        in: query
+        description: Maximum number of violations to report
+        schema:
+          type: string
+      - name: shacl.targetClass.simple
+        in: query
+        schema:
+          $ref: '#/components/schemas/SHACL_TARGETCLASS_SIMPLE'
+      responses:
+        200:
+          description: SHACL validation report
+          content:
+            text/turtle:
+              examples:
+                GENERIC_TURTLE:
+                  description: GENERIC_TURTLE
+                  $ref: '#/components/examples/GENERIC_TURTLE'
+            application/trig:
+              examples:
+                GENERIC_TRIG:
+                  description: GENERIC_TRIG
+                  $ref: '#/components/examples/GENERIC_TRIG'
+            application/rdf+xml:
+              examples:
+                GENERIC_RDFXML:
+                  description: GENERIC_RDFXML
+                  $ref: '#/components/examples/GENERIC_RDFXML'
+            application/n-triples:
+              examples:
+                GENERIC_NTRIPLES:
+                  description: GENERIC_NTRIPLES
+                  $ref: '#/components/examples/GENERIC_NTRIPLES'
+            application/n-quads:
+              examples:
+                GENERIC_NQUADS:
+                  description: GENERIC_NQUADS
+                  $ref: '#/components/examples/GENERIC_NQUADS'
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/GENERIC_JSONLD'
+        404:
+          description: Transaction does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Transaction does not exist
+                  code:
+                    type: string
+                    example: 0D0TU2
+      x-sort-order:
+        group: "3"
+        order: "2"
+  /admin/cache:
+    post:
+      tags:
+      - Data Caching
+      summary: Create cache
+      description: |-
+        Create a new cached dataset from a query or named/virtual graph
+
+        NOTE: Either "query" or "graph" must be provided
+      operationId: createCache
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CACHE_OBJ'
+        required: true
+      responses:
+        200:
+          content:
+            text/plain:
+              example: Cached query with 42 solutions
+  /admin/cache/refresh/{name}:
+    post:
+      tags:
+      - Data Caching
+      summary: Refresh cache
+      operationId: refreshCache
+      parameters:
+      - name: name
+        in: query
+        description: The name of the cache
+        required: true
+        schema:
+          type: string
+      responses:
+        200:
+          content:
+            text/plain:
+              example: Refreshed query with 42 solutions
+  /admin/cache/status:
+    post:
+      tags:
+      - Data Caching
+      summary: Get cache status
+      description: Retrieve the status of one or more cached graphs or queries
+      operationId: cachedDatasetStatus
+      requestBody:
+        $ref: '#/components/requestBodies/CACHE_LIST'
+      responses:
+        200:
+          $ref: '#/components/responses/CACHE_STATUS_LIST'
+  /admin/cache/graphs:
+    get:
+      tags:
+      - Data Caching
+      summary: Get cached graphs
+      operationId: getCachedGraphs
+      responses:
+        200:
+          $ref: '#/components/responses/CACHE_GRAPH_LIST'
+  /admin/cache/target:
+    get:
+      tags:
+      - Data Caching
+      summary: List cache targets
+      operationId: listTargets
+      responses:
+        200:
+          $ref: '#/components/responses/CACHE_TARGET_LIST'
+    post:
+      tags:
+      - Data Caching
+      summary: Add cache target
+      operationId: addTarget
+      requestBody:
+        $ref: '#/components/requestBodies/CACHE_TARGET'
+      responses:
+        default:
+          description: default response
+          content:
+            '*/*': {}
+  /admin/cache/target/{name}:
+    delete:
+      tags:
+      - Data Caching
+      summary: Remove cache target
+      description: Remove a cache target and destroy its contents
+      operationId: removeTarget
+      parameters:
+      - name: name
+        in: query
+        description: The name of the target
+        required: true
+        schema:
+          type: string
+      responses:
+        200:
+          description: Target removed
+  /admin/cache/queries:
+    get:
+      tags:
+      - Data Caching
+      summary: Get cached queries
+      operationId: getCachedQueries
+      responses:
+        200:
+          $ref: '#/components/responses/CACHE_QUERY_LIST'
+  /admin/cache/target/{name}/orphan:
+    delete:
+      tags:
+      - Data Caching
+      summary: Orphan cache target
+      description: Orphan a cache target but do not destroy the contents
+      operationId: orphanTarget
+      parameters:
+      - name: name
+        in: query
+        description: The name of the target
+        required: true
+        schema:
+          type: string
+      responses:
+        200:
+          description: Target orphaned
+  /admin/cache/{name}:
+    delete:
+      tags:
+      - Data Caching
+      summary: Drop cache
+      operationId: dropCache
+      parameters:
+      - name: name
+        in: query
+        description: The name of the cache
+        required: true
+        schema:
+          type: string
+      responses:
+        200:
+          description: Cache dropped
+  /{db}/reasoning/consistency:
+    get:
+      tags:
+      - Reasoning
+      summary: Check consistency
+      description: Returns whether or not the data in the database are consistent
+        with respect to the ontology
+      operationId: isConsistent
+      parameters:
+      - name: db
+        $ref: '#/components/parameters/db'
+      responses:
+        200:
+          content:
+            text/boolean: {}
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CONSISTENT'
+        404:
+          description: Database does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Database does not exist
+                  code:
+                    type: string
+                    example: 0D0DU2
+  /{db}/reasoning/{txid}/explain/inconsistency:
+    get:
+      tags:
+      - Reasoning
+      summary: Explain inconsistency in transaction
+      description: Explain how, if at all, the data are inconsistent with respect
+        to the ontology
+      operationId: explainInconsistencyInTx
+      parameters:
+      - name: db
+        $ref: '#/components/parameters/db'
+      - name: txid
+        $ref: '#/components/parameters/txid'
+      responses:
+        200:
+          $ref: '#/components/responses/REASONING_PROOF_LIST'
+        404:
+          description: Transaction does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Transaction does not exist
+                  code:
+                    type: string
+                    example: 0D0TU2
+  /{db}/reasoning/{txid}/explain:
+    post:
+      tags:
+      - Reasoning
+      summary: Explain inference in transaction
+      description: Explain how the inference engine inferred a specific piece of data
+      operationId: explainInferenceInTx
+      parameters:
+      - name: db
+        $ref: '#/components/parameters/db'
+      - name: txid
+        $ref: '#/components/parameters/txid'
+      requestBody:
+        description: The axiom to explain
+        content:
+          text/turtle:
+            examples:
+              REASONING_AXIOM_TTL:
+                description: REASONING_AXIOM_TTL
+                $ref: '#/components/examples/REASONING_AXIOM_TTL'
+          application/trig:
+            examples:
+              REASONING_AXIOM_TTL:
+                description: REASONING_AXIOM_TTL
+                $ref: '#/components/examples/REASONING_AXIOM_TTL'
+          application/rdf+xml:
+            examples:
+              REASONING_AXIOM_RDFXML:
+                description: REASONING_AXIOM_RDFXML
+                $ref: '#/components/examples/REASONING_AXIOM_RDFXML'
+          application/n-triples:
+            examples:
+              REASONING_AXIOM_TTL:
+                description: REASONING_AXIOM_TTL
+                $ref: '#/components/examples/REASONING_AXIOM_TTL'
+          application/n-quads:
+            examples:
+              REASONING_AXIOM_TTL:
+                description: REASONING_AXIOM_TTL
+                $ref: '#/components/examples/REASONING_AXIOM_TTL'
+          application/ld+json:
+            examples:
+              REASONING_AXIOM_JSONLD:
+                description: REASONING_AXIOM_JSONLD
+                $ref: '#/components/examples/REASONING_AXIOM_JSONLD'
+        required: true
+      responses:
+        200:
+          $ref: '#/components/responses/REASONING_PROOF_LIST'
+        404:
+          description: Transaction does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Transaction does not exist
+                  code:
+                    type: string
+                    example: 0D0TU2
+  /{db}/reasoning/explain:
+    post:
+      tags:
+      - Reasoning
+      summary: Explain inference
+      description: Explain how the inference engine inferred a specific piece of data
+      operationId: explainInference
+      parameters:
+      - name: db
+        $ref: '#/components/parameters/db'
+      requestBody:
+        description: The axiom to explain
+        content:
+          text/turtle:
+            examples:
+              REASONING_AXIOM_TTL:
+                description: REASONING_AXIOM_TTL
+                $ref: '#/components/examples/REASONING_AXIOM_TTL'
+          application/trig:
+            examples:
+              REASONING_AXIOM_TTL:
+                description: REASONING_AXIOM_TTL
+                $ref: '#/components/examples/REASONING_AXIOM_TTL'
+          application/rdf+xml:
+            examples:
+              REASONING_AXIOM_RDFXML:
+                description: REASONING_AXIOM_RDFXML
+                $ref: '#/components/examples/REASONING_AXIOM_RDFXML'
+          application/n-triples:
+            examples:
+              REASONING_AXIOM_TTL:
+                description: REASONING_AXIOM_TTL
+                $ref: '#/components/examples/REASONING_AXIOM_TTL'
+          application/n-quads:
+            examples:
+              REASONING_AXIOM_TTL:
+                description: REASONING_AXIOM_TTL
+                $ref: '#/components/examples/REASONING_AXIOM_TTL'
+          application/ld+json:
+            examples:
+              REASONING_AXIOM_JSONLD:
+                description: REASONING_AXIOM_JSONLD
+                $ref: '#/components/examples/REASONING_AXIOM_JSONLD'
+        required: true
+      responses:
+        200:
+          $ref: '#/components/responses/REASONING_PROOF_LIST'
+        404:
+          description: Database does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Database does not exist
+                  code:
+                    type: string
+                    example: 0D0DU2
+  /{db}/query/reasoning:
+    get:
+      tags:
+      - Reasoning
+      summary: Perform SPARQL query with reasoning enabled
+      operationId: query
+      parameters:
+      - name: db
+        $ref: '#/components/parameters/db'
+      - $ref: '#/components/parameters/query'
+      requestBody:
+        content:
+          application/sparql-query:
+            examples:
+              SPARQL_QUERY:
+                description: SPARQL_QUERY
+                $ref: '#/components/examples/SPARQL_QUERY'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SPARQL_QUERY'
+      responses:
+        200:
+          description: Query results
+          content:
+            application/sparql-results+xml:
+              examples:
+                SPARQL_RESULTS_XML:
+                  description: SPARQL_RESULTS_XML
+                  $ref: '#/components/examples/SPARQL_RESULTS_XML'
+            application/sparql-results+json:
+              schema:
+                $ref: '#/components/schemas/SPARQL_RESULTS_JSON'
+            text/csv:
+              examples:
+                SPARQL_RESULTS_CSV:
+                  description: SPARQL_RESULTS_CSV
+                  $ref: '#/components/examples/SPARQL_RESULTS_CSV'
+            text/tsv:
+              examples:
+                SPARQL_RESULTS_TSV:
+                  description: SPARQL_RESULTS_TSV
+                  $ref: '#/components/examples/SPARQL_RESULTS_TSV'
+            text/turtle:
+              examples:
+                GENERIC_TURTLE:
+                  description: GENERIC_TURTLE
+                  $ref: '#/components/examples/GENERIC_TURTLE'
+            application/trig:
+              examples:
+                GENERIC_TRIG:
+                  description: GENERIC_TRIG
+                  $ref: '#/components/examples/GENERIC_TRIG'
+            application/rdf+xml:
+              examples:
+                GENERIC_RDFXML:
+                  description: GENERIC_RDFXML
+                  $ref: '#/components/examples/GENERIC_RDFXML'
+            application/n-triples:
+              examples:
+                GENERIC_NTRIPLES:
+                  description: GENERIC_NTRIPLES
+                  $ref: '#/components/examples/GENERIC_NTRIPLES'
+            application/n-quads:
+              examples:
+                GENERIC_NQUADS:
+                  description: GENERIC_NQUADS
+                  $ref: '#/components/examples/GENERIC_NQUADS'
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/GENERIC_JSONLD'
+        400:
+          $ref: '#/components/responses/INVALID_QUERY'
+        406:
+          description: Accept header invalid for type of query sent
+        404:
+          description: Database does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Database does not exist
+                  code:
+                    type: string
+                    example: 0D0DU2
+  /{db}/reasoning/schema:
+    get:
+      tags:
+      - Reasoning
+      summary: Get reasoning schema
+      description: Retrieve the reasoning schema in RDF of the given database
+      operationId: schema
+      parameters:
+      - name: db
+        $ref: '#/components/parameters/db'
+      responses:
+        200:
+          description: Reasoning schema in RDF
+          content:
+            text/turtle:
+              examples:
+                GENERIC_TURTLE:
+                  description: GENERIC_TURTLE
+                  $ref: '#/components/examples/GENERIC_TURTLE'
+            application/trig:
+              examples:
+                GENERIC_TRIG:
+                  description: GENERIC_TRIG
+                  $ref: '#/components/examples/GENERIC_TRIG'
+            application/rdf+xml:
+              examples:
+                GENERIC_RDFXML:
+                  description: GENERIC_RDFXML
+                  $ref: '#/components/examples/GENERIC_RDFXML'
+            application/n-triples:
+              examples:
+                GENERIC_NTRIPLES:
+                  description: GENERIC_NTRIPLES
+                  $ref: '#/components/examples/GENERIC_NTRIPLES'
+            application/n-quads:
+              examples:
+                GENERIC_NQUADS:
+                  description: GENERIC_NQUADS
+                  $ref: '#/components/examples/GENERIC_NQUADS'
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/GENERIC_JSONLD'
+        404:
+          description: Database does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Database does not exist
+                  code:
+                    type: string
+                    example: 0D0DU2
+  /{db}/reasoning/explain/inconsistency:
+    get:
+      tags:
+      - Reasoning
+      summary: Explain inconsistency
+      description: Explain how, if at all, the data are inconsistent with respect
+        to the ontology
+      operationId: explainInconsistency
+      parameters:
+      - name: db
+        $ref: '#/components/parameters/db'
+      responses:
+        200:
+          $ref: '#/components/responses/REASONING_PROOF_LIST'
+        404:
+          description: Database does not exist
+          content:
+            application/json:
+              schema:
+                required:
+                - message
+                - code
+                properties:
+                  message:
+                    type: string
+                    example: Database does not exist
+                  code:
+                    type: string
+                    example: 0D0DU2
+  /admin/virtual_graphs/{vgName}/info:
+    get:
+      tags:
+      - Virtual Graphs
+      summary: Get virtual graph info
+      operationId: virtualGraphInfo
+      responses:
+        200:
+          $ref: '#/components/responses/SINGLE_VIRTUAL_GRAPH_INFO'
+  /admin/virtual_graphs:
+    get:
+      tags:
+      - Virtual Graphs
+      summary: List virtual graphs
+      operationId: list
+      responses:
+        200:
+          $ref: '#/components/responses/VIRTUAL_GRAPH_NAME_LIST'
+    post:
+      tags:
+      - Virtual Graphs
+      summary: Add virtual graph
+      operationId: add
+      requestBody:
+        $ref: '#/components/requestBodies/VIRTUAL_GRAPH_CREATE'
+      responses:
+        201:
+          description: Virtual graph created
+  /admin/virtual_graphs/import_db:
+    post:
+      tags:
+      - Virtual Graphs
+      summary: Import virtual graph
+      description: Import (materialize) a virtual graph directly into the local knowledge
+        graph
+      operationId: importDb
+      requestBody:
+        $ref: '#/components/requestBodies/VIRTUAL_GRAPH_IMPORT'
+      responses:
+        204:
+          description: Virtual graph imported
+  /admin/virtual_graphs/{vgName}/mappingsString/{syntax}:
+    get:
+      tags:
+      - Virtual Graphs
+      summary: Get mappings
+      operationId: getMappingsForSyntax
+      parameters:
+      - name: syntax
+        in: path
+        description: The desired RDF syntax of the mappings
+        required: true
+        schema:
+          type: string
+      responses:
+        200:
+          description: Virtual graph mappings as RDF
+          content:
+            text/turtle:
+              examples:
+                GENERIC_TURTLE:
+                  description: GENERIC_TURTLE
+                  $ref: '#/components/examples/GENERIC_TURTLE'
+            application/trig:
+              examples:
+                GENERIC_TRIG:
+                  description: GENERIC_TRIG
+                  $ref: '#/components/examples/GENERIC_TRIG'
+            application/rdf+xml:
+              examples:
+                GENERIC_RDFXML:
+                  description: GENERIC_RDFXML
+                  $ref: '#/components/examples/GENERIC_RDFXML'
+            application/n-triples:
+              examples:
+                GENERIC_NTRIPLES:
+                  description: GENERIC_NTRIPLES
+                  $ref: '#/components/examples/GENERIC_NTRIPLES'
+            application/n-quads:
+              examples:
+                GENERIC_NQUADS:
+                  description: GENERIC_NQUADS
+                  $ref: '#/components/examples/GENERIC_NQUADS'
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/GENERIC_JSONLD'
+  /admin/virtual_graphs/{vgName}/options:
+    get:
+      tags:
+      - Virtual Graphs
+      summary: Get virtual graph options
+      operationId: getOptions
+      responses:
+        200:
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/VIRTUAL_GRAPH_OPTIONS'
+  /admin/virtual_graphs/{vgName}/available:
+    get:
+      tags:
+      - Virtual Graphs
+      summary: Available
+      description: Returns whether or not the virtual graph is available
+      operationId: available
+      responses:
+        200:
+          content:
+            text/plain: {}
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VIRTUAL_GRAPH_AVAILABLE'
+  /admin/virtual_graphs/import:
+    post:
+      tags:
+      - Virtual Graphs
+      summary: Import file
+      description: Import a CSV or JSON file as a virtual graph into the knowledge
+        graph
+      operationId: importFile
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/VIRTUAL_GRAPH_IMPORT_FILE'
+      responses:
+        200:
+          description: File imported successfully
+  /admin/virtual_graphs/{vgName}:
+    put:
+      tags:
+      - Virtual Graphs
+      summary: Update virtual graph
+      operationId: update
+      requestBody:
+        $ref: '#/components/requestBodies/VIRTUAL_GRAPH_CREATE'
+      responses:
+        201:
+          description: Virtual graph updated
+    delete:
+      tags:
+      - Virtual Graphs
+      summary: Delete virtual graph
+      operationId: delete
+      responses:
+        204:
+          description: Virtual graph deleted
+  /admin/virtual_graphs/{vgName}/online:
+    post:
+      tags:
+      - Virtual Graphs
+      summary: Online virtual graph
+      operationId: online
+      responses:
+        204:
+          description: Virtual graph onlined
+  /admin/virtual_graphs/{vgName}/database:
+    get:
+      tags:
+      - Virtual Graphs
+      summary: Get database
+      description: Get the database associated with a virtual graph
+      operationId: getDatabase
+      responses:
+        200:
+          content:
+            text/plain:
+              schema:
+                type: string
+                description: The database name, or * if one was not specified
+  /admin/virtual_graphs/list:
+    get:
+      tags:
+      - Virtual Graphs
+      summary: List virtual graphs' info
+      operationId: virtualGraphInfos
+      responses:
+        200:
+          $ref: '#/components/responses/VIRTUAL_GRAPH_LIST'
 components:
   schemas:
     GENERIC_RESPONSE_MESSAGE:
@@ -1948,7 +4573,7 @@ components:
           example: Unexpected end of file [L9]
         code:
           type: string
-          example: QIEVR2
+          example: QEIVR2
     GENERIC_JSONLD:
       properties:
         '@id':
@@ -2397,7 +5022,433 @@ components:
           - Pre-execution
           - Running
           - Terminating
+          - Terminating
           - Done
+    BITES_POST_DOC:
+      properties:
+        rdfExtractors:
+          type: string
+          example: tika,entities
+        testExtractors:
+          type: string
+          example: tika
+        keyAssertions:
+          type: boolean
+          description: Whether named graph contents should be retained for the document
+            if it already exists
+      additionalProperties:
+        type: string
+        format: binary
+    GRAPHQL_QUERY:
+      type: string
+      example: '{ Human { name } }'
+    GRAPHQL_QUERY_POST:
+      required:
+      - query
+      properties:
+        query:
+          $ref: '#/components/schemas/GRAPHQL_QUERY'
+        operationName:
+          type: string
+        variables:
+          type: object
+    GRAPHQL_QUERY_RESULT:
+      required:
+      - data
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            additionalProperties:
+              type: string
+    ICV_SPARQL_QUERY:
+      required:
+      - query
+      properties:
+        query:
+          type: string
+          example: |-
+            class Example {
+                summary: null
+                description: null
+                value: null
+                externalValue: null
+                $ref: #/components/examples/ICV_SPARQL_QUERY
+            }
+    ICV_VALIDATION:
+      required:
+      - valid
+      properties:
+        valid:
+          type: boolean
+    SHACL_TARGETCLASS_SIMPLE:
+      type: boolean
+      description: If true, sh:targetClass will be evaluated based on rdf:type triples
+        only, without following rdfs:subClassOf relations
+    CACHE_TARGET:
+      required:
+      - name
+      - hostname
+      - port
+      - username
+      - password
+      properties:
+        name:
+          type: string
+        hostname:
+          type: string
+        port:
+          type: integer
+          format: int32
+        username:
+          type: string
+        password:
+          type: string
+    CACHE_TARGET_LIST:
+      type: array
+      items:
+        $ref: '#/components/schemas/CACHE_TARGET'
+    CACHE_OBJ:
+      required:
+      - name
+      - target
+      properties:
+        name:
+          type: string
+          format: URI
+        target:
+          type: string
+        database:
+          type: string
+        refreshScript:
+          type: string
+          description: An optional SPARQL Insert query to run when refreshing the
+            cache
+        query:
+          type: string
+          description: Query to cache. Mutually exclusive with "graph"
+        graph:
+          type: string
+          description: Graph to cache. Mutually exclusive with "query"
+    CACHE_QUERY_LIST:
+      type: array
+      items:
+        properties:
+          name:
+            type: string
+            format: URI
+          target:
+            $ref: '#/components/schemas/CACHE_TARGET'
+          database:
+            type: string
+          refreshScript:
+            type: string
+            description: An optional SPARQL Insert query to run when refreshing the
+              cache
+          query:
+            type: string
+    CACHE_GRAPH_LIST:
+      type: array
+      items:
+        properties:
+          name:
+            type: string
+            format: URI
+          target:
+            $ref: '#/components/schemas/CACHE_TARGET'
+          database:
+            type: string
+          refreshScript:
+            type: string
+            description: An optional SPARQL Insert query to run when refreshing the
+              cache
+          graph:
+            type: string
+    CACHE_STATUS_LIST:
+      type: array
+      items:
+        properties:
+          name:
+            type: string
+            format: URI
+          type:
+            type: string
+            enum:
+            - graph
+            - query
+          target:
+            type: string
+          size:
+            type: integer
+            format: int32
+            example: 42
+          lastRefresh:
+            type: string
+            format: date
+    REASONING_PROOF:
+      properties:
+        status:
+          type: string
+          enum:
+          - INFERRED
+          - ASSERTED
+          - VIOLATED
+        expression:
+          type: string
+        children:
+          type: array
+          items:
+            $ref: '#/components/schemas/REASONING_PROOF'
+        namedGraphs:
+          type: array
+          items:
+            type: string
+    REASONING_PROOF_LIST:
+      required:
+      - proofs
+      properties:
+        proofs:
+          type: array
+          items:
+            $ref: '#/components/schemas/REASONING_PROOF'
+    CONSISTENT:
+      required:
+      - consistent
+      properties:
+        consistent:
+          type: boolean
+    VIRTUAL_GRAPH:
+      required:
+      - name
+      - available
+      properties:
+        name:
+          type: string
+        database:
+          type: string
+        available:
+          type: boolean
+    VIRTUAL_GRAPH_NAME_LIST:
+      required:
+      - virtual_graphs
+      properties:
+        virtual_graphs:
+          type: array
+          items:
+            type: string
+            example: virtual://myVG
+    VIRTUAL_GRAPH_LIST:
+      required:
+      - virtual_graphs
+      properties:
+        virtual_graphs:
+          type: array
+          items:
+            $ref: '#/components/schemas/VIRTUAL_GRAPH'
+    SINGLE_VIRTUAL_GRAPH_INFO:
+      required:
+      - info
+      properties:
+        info:
+          $ref: '#/components/schemas/VIRTUAL_GRAPH'
+    VIRTUAL_GRAPH_OPTIONS:
+      properties:
+        base:
+          type: string
+          description: Base IRI used to resolve relative IRIs from virtual graphs
+          format: URI
+        jdbc.url:
+          type: string
+          description: The URL of the JDBC connection
+        jdbc.username:
+          type: string
+          description: The username used to make the JDBC connection
+        jdbc.password:
+          type: string
+          description: The password used to make the JDBC connection
+        jdbc.driver:
+          type: string
+          description: The driver class name used to make the JDBC connection
+        mappings.syntax:
+          type: string
+          enum:
+          - R2RML
+          - STARDOG
+          - SMS2
+        mappings.format:
+          type: string
+          description: For R2RML, the RDF format of the mappings
+        csv.separator:
+          type: string
+          description: For CSV import, a single-character separator
+          default: ','
+        csv.quote:
+          type: string
+          description: For CSV import, a single character used to encapsulate values
+            containing special characters
+          default: '"'
+        csv.header:
+          type: boolean
+          description: For CSV import, should the import process read the header row?
+          default: true
+        csv.skip.empty:
+          type: boolean
+          description: For CSV import, should empty values be skipped?
+          default: true
+        csv.class:
+          type: string
+          description: For CSV import, which class should imported rows be members
+            of?
+        csv.hash.function:
+          type: string
+          description: 'For CSV import, which hash function should be uses when the
+            # notation is used?'
+          default: SHA1
+        mongodb.uri:
+          type: string
+          description: The URI for a MongoDB connection
+        elasticsearch.rest.urls:
+          type: string
+          description: Whitespace-delimited list of connection host/port values for
+            Elasticsearch
+        elasticsearch.username:
+          type: string
+        elasticsearch.password:
+          type: string
+        cassandra.contact.point:
+          type: string
+          description: The address of the Cassandra node(s) that the driver uses to
+            discover the cluster topology
+        cassandra.keyspace:
+          type: string
+        cassandra.username:
+          type: string
+        cassandra.password:
+          type: string
+        cassandra.allow.filtering:
+          type: boolean
+          description: Whether to include the ALLOW FILTERING clause at the end of
+            Cassandra CQL queries. Not recommended for production use
+          default: false
+        percent.encode:
+          type: boolean
+          description: Should IRI template strings be percent-encoded to be valid
+            IRIs?
+          default: true
+        import.optimize:
+          type: boolean
+          description: Should `virtual import` and `?s ?p ?o` queries use the optimized
+            translation?
+          default: true
+        parser.sql.quoting:
+          type: string
+          description: DB quoting convention used by the parser
+          example: ANSI
+        sql.functions:
+          type: string
+          description: A comma-separated list of SQL function names to register with
+            the parser
+        unique.key.sets:
+          type: string
+          description: 'For data sources that do not express unique constraints in
+            their metadata, either because unique constraints are not supported or
+            because the data source did not include some or all of the valid constraints
+            for reasons such as performance concerns, this property is used to define
+            additional constraints manually. The property value is a comma-separated
+            list of keys that define unique rows in a table. Each key is itself a
+            comma-separated list of schema-qualified columns, enclosed in parentheses.
+            For example, if table `APP.CUSTOMERS` has an `ID` column that serves as
+            a primary key and a pair of columns, `FNAME` and `LNAME`, that together
+            are a unique key, the value to express that is: `(APP.CUSTOMERS.ID),(APP.CUSTOMERS.FNAME,APP.CUSTOMERS.LNAME)`'
+        sql.dialect:
+          type: string
+          description: The format of the generated SQL, for use when using an unsupported
+            JDBC driver
+          example: MYSQL
+        sql.schemas:
+          type: string
+          description: A comma-separated list of schemas to append to the schema search
+            path
+        sql.default.schema:
+          type: string
+          description: Override the default schema for the connected user
+        default.mapping.include.tables:
+          type: string
+          description: A comma-separated list of tables to include when generating
+            default mappings. Incompatible with 'default.mapping.exclude.tables'
+        default.mapping.exclude.tables:
+          type: string
+          description: A comma-separated list of tables to exclude when generating
+            default mappings. Incompatible with 'default.mapping.include.tables'
+        schema.in.generated.mappings:
+          type: boolean
+          description: Whether to include the name of the schema (along with the table
+            name) in the tamplates for IRIs when automatically generating mappings
+      additionalProperties:
+        pattern: ext\..+
+        type: string
+        description: Additional properties to pass directly to the JDBC driver
+      externalDocs:
+        url: https://www.stardog.com/docs/#_available_properties
+    VIRTUAL_GRAPH_CREATE:
+      properties:
+        name:
+          type: string
+        mappings:
+          type: string
+        options:
+          $ref: '#/components/schemas/VIRTUAL_GRAPH_OPTIONS'
+    VIRTUAL_GRAPH_IMPORT:
+      required:
+      - db
+      - mappings
+      - named_graph
+      - remove_all
+      - options
+      properties:
+        db:
+          type: string
+          description: The database into which to import the graph
+        mappings:
+          type: string
+        named_graph:
+          type: string
+        remove_all:
+          type: boolean
+          description: Should the target named graph be cleared before importing?
+        options:
+          $ref: '#/components/schemas/VIRTUAL_GRAPH_OPTIONS'
+    VIRTUAL_GRAPH_AVAILABLE:
+      required:
+      - available
+      properties:
+        available:
+          type: boolean
+    VIRTUAL_GRAPH_IMPORT_FILE:
+      required:
+      - database
+      - mappings
+      - options
+      - input_file_type
+      - input_file
+      properties:
+        database:
+          type: string
+        mappings:
+          type: string
+        options:
+          $ref: '#/components/schemas/VIRTUAL_GRAPH_OPTIONS'
+        named_graph:
+          type: string
+          format: URI
+        input_file_type:
+          type: string
+          enum:
+          - JSON
+          - DELIMITED
+        input_file:
+          type: string
   responses:
     EMPTY_SUCCESS:
       description: Operation successful
@@ -2411,15 +5462,6 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/GENERIC_RESPONSE_ERROR_MESSAGE'
-    DB_TX_404:
-      description: Database/Transaction not found (See SD-Error-Code)
-      headers:
-        SD-Error-Code:
-          description: "5 - Transaction Not Found  \n6 - Database Not Found"
-          schema:
-            type: integer
-            format: int32
-            example: 42
     INVALID_QUERY:
       description: Invalid query sent
       content:
@@ -2432,12 +5474,6 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/JSON_CONFIG_PROPERTIES'
-    DB_METADATA:
-      description: JSON object detailing the desired metadata options
-      content:
-        application/json:
-          example:
-            $ref: '#/components/examples/DB_METADATA'
     ROLE_LIST:
       content:
         application/json:
@@ -2484,6 +5520,56 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/QUERY'
+    GRAPHQL_QUERY_RESULT:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/GRAPHQL_QUERY_RESULT'
+    CACHE_TARGET_LIST:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CACHE_TARGET_LIST'
+    CACHE_QUERY_LIST:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CACHE_QUERY_LIST'
+    CACHE_GRAPH_LIST:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CACHE_GRAPH_LIST'
+    CACHE_STATUS_LIST:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CACHE_STATUS_LIST'
+    REASONING_PROOF_LIST:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/REASONING_PROOF_LIST'
+    VIRTUAL_GRAPH_NAME_LIST:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/VIRTUAL_GRAPH_NAME_LIST'
+    VIRTUAL_GRAPH_LIST:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/VIRTUAL_GRAPH_LIST'
+    SINGLE_VIRTUAL_GRAPH_INFO:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SINGLE_VIRTUAL_GRAPH_INFO'
+    VIRTUAL_GRAPH_OPTIONS:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/VIRTUAL_GRAPH_OPTIONS'
   parameters:
     db:
       name: db
@@ -2520,7 +5606,7 @@ components:
     query:
       name: query
       in: query
-      description: SPARQL query to run
+      description: Query to run
       required: true
       schema:
         type: string
@@ -2538,10 +5624,31 @@ components:
       required: true
       schema:
         type: string
-    name:
-      name: name
+    functionName:
+      name: functionName
       in: path
       description: The name of the stored function
+      required: true
+      schema:
+        type: string
+    queryName:
+      name: queryName
+      in: path
+      description: The name of the query
+      required: true
+      schema:
+        type: string
+    storedQueryName:
+      name: storedQueryName
+      in: path
+      description: The name of the stored query
+      required: true
+      schema:
+        type: string
+    docName:
+      name: docName
+      in: path
+      description: The name of the document
       required: true
       schema:
         type: string
@@ -2679,12 +5786,6 @@ components:
         `─ MergeJoin(?s) [#625]
            +─ Scan[POSC](?s, <http://www.w3.org/1999/02/22-rdf-syntax-ns#type>, :Example) [#1]
            `─ Scan[PSOC](?s, rdfs:label, ?label) [#718K]
-    DB_METADATA:
-      value: |-
-        {
-          "database.name": null,
-          "preserve.bnode.ids": null
-        }
     STORED_QUERY_TURTLE:
       value: |-
         @prefix system: <http://system.stardog.com/> .
@@ -2728,6 +5829,68 @@ components:
         FUNCTION permutation(?n,?r) {
            (factorial(?n) / factorial((?n - ?r)))
         }
+    PLAINTEXT_INT:
+      value: "42"
+    ICV_CONSTRAINT_TTL:
+      value: <urn:Employee> <http://www.w3.org/2000/01/rdf-schema#subClassOf> <urn:Person>
+        .
+    ICV_CONSTRAINT_RDFXML:
+      value: "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<rdf:RDF\n\txmlns:rdf=\"\
+        http://www.w3.org/1999/02/22-rdf-syntax-ns#\">\n    <rdf:Description rdf:about=\"\
+        urn:Employee\">\n        <subClassOf xmlns=\"http://www.w3.org/2000/01/rdf-schema#\"\
+        \ rdf:resource=\"urn:Person\"/>\n    </rdf:Description>\n</rdf:RDF>"
+    ICV_CONSTRAINT_JSONLD:
+      value: |-
+        [
+          {
+            "@id": "urn:Employee",
+            "http://www.w3.org/2000/01/rdf-schema#subClassOf": [
+              {
+                "@id": "urn:Person"
+              }
+            ]
+          }
+        ]
+    REASONING_AXIOM_TTL:
+      value: <urn:Employee> <http://www.w3.org/2000/01/rdf-schema#subClassOf> <urn:Person>
+        .
+    REASONING_AXIOM_RDFXML:
+      value: "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<rdf:RDF\n\txmlns:rdf=\"\
+        http://www.w3.org/1999/02/22-rdf-syntax-ns#\">\n    <rdf:Description rdf:about=\"\
+        urn:Employee1\">\n        <rdf:type rdf:resource=\"urn:Person\"/>\n    </rdf:Description>\n\
+        </rdf:RDF>"
+    REASONING_AXIOM_JSONLD:
+      value: |-
+        [
+            {
+                "@id": "urn:Employee1",
+                "@type": [
+                    "urn:Person"
+                ]
+            }
+        ]
+    ICV_SPARQL_QUERY:
+      value: |-
+        SELECT DISTINCT *
+        FROM <tag:stardog:api:context:local>
+        WHERE {
+           ?x0 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <urn:Employee> .
+           FILTER NOT EXISTS {
+              ?x0 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <urn:Person> .
+           }
+        }
+    ICV_VIOLATIONS:
+      value: "--myBoundary\nContent-Type: application/rdf+xml\n\n<?xml version=\"\
+        1.0\" encoding=\"UTF-8\"?>\n<rdf:RDF\n\txmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"\
+        >\n\n<rdf:Description rdf:about=\"urn:Employee\">\n\t<rdf:type rdf:resource=\"\
+        http://www.w3.org/2002/07/owl#Class\"/>\n</rdf:Description>\n\n<rdf:Description\
+        \ rdf:about=\"urn:Person\">\n\t<rdf:type rdf:resource=\"http://www.w3.org/2002/07/owl#Class\"\
+        />\n</rdf:Description>\n\n<rdf:Description rdf:about=\"urn:Employee\">\n\t\
+        <subClassOf xmlns=\"http://www.w3.org/2000/01/rdf-schema#\" rdf:resource=\"\
+        urn:Person\"/>\n</rdf:Description>\n\n</rdf:RDF>\n\n--myBoundary\nContent-Type:\
+        \ application/sparql-results+xml\n\n<?xml version='1.0' encoding='UTF-8'?><sparql\
+        \ xmlns='http://www.w3.org/2005/sparql-results#'><head><variable name='x0'/></head><results><result><binding\
+        \ name='x0'><uri>urn:Employee1</uri></binding></result></results></sparql>"
   requestBodies:
     ROLENAME:
       content:
@@ -2754,12 +5917,6 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/DB_OFFLINE_ONLINE'
-    DB_METADATA:
-      description: A JSON object with keys equal to the desired metadata options
-      content:
-        application/json:
-          example:
-            $ref: '#/components/examples/DB_METADATA'
     ROLE_LIST:
       content:
         application/json:
@@ -2775,7 +5932,33 @@ components:
         text/plain:
           example:
             $ref: '#/components/examples/STORED_FUNCTION'
+    CACHE_TARGET:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CACHE_TARGET'
+    CACHE_LIST:
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              type: URI
+    VIRTUAL_GRAPH_CREATE:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/VIRTUAL_GRAPH_CREATE'
+    VIRTUAL_GRAPH_IMPORT:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/VIRTUAL_GRAPH_IMPORT'
 x-tagGroups:
+- name: Data Unification
+  tags:
+  - BITES
+  - Virtual Graphs
 - name: Server
   tags:
   - Server Admin
@@ -2788,6 +5971,10 @@ x-tagGroups:
   - Transactions
   - Graph Store Protocol
   - SPARQL
+  - GraphQL
+  - Integrity Constraints
+  - Data Caching
+  - Reasoning
 - name: Security
   tags:
   - Users
