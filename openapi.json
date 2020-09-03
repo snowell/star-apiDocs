@@ -2,11 +2,11 @@
   "openapi": "3.0.1",
   "info": {
     "title": "Stardog HTTP API",
-    "description": "# Overview\nHere be an overview of some kind\n\n# Error Codes\nHere are explanations of what the various error codes mean:\n\nError Code | Meaning\n-----------|--------\n000012 | UNKNOWN\n000IA2 | ILLEGAL_ARGUMENT\n000SD4 | SHUTTING_DOWN\n00UOE2 | UNSUPPORTED_OPERATION\n0D0012 | UNKNOWN_DATABASE_EXCEPTION\n0D0CE3 | DATABASE_CONSISTENCY_EXCEPTION\n0D0DE2 | DATABASE_EXISTS\n0D0DU2 | DATABASE_UNKNOWN\n0D0TU2 | TRANSACTION_UNKNOWN\n0DICC2 | INVALID_CONNECTION_CONFIGURATION\n0DIDN2 | INVALID_DATABASE_NAME\n0DIDS2 | INVALID_DATABASE_STATE\nBIUDE2 | MISSING_DOCUMENT\nHS0012 | UNKNOWN_CONNECTION_EXCEPTION\nHSJSE2 | JSON_SYNTAX_EXCEPTION\nHSJSO2 | JSON_EXCEPTION\nHSSSL3 | SSL_EXCEPTION\nQE0012 | UNKNOWN_QUERY_EXCEPTION\nQE0FE2 | FUNCTION_EXISTS\nQE0PE2 | PARSE_EXCEPTION\nQE0QE2 | QUERY_EXISTS\nQECTP2 | CANNOT_TRANSLATE_PLAN\nQEFNF2 | FUNCTION_NOT_FOUND\nQEIQT2 | INVALID_QUERY_TYPE\nQEIVR2 | INVALID_RDF\nQEMAQ2 | MALFORMED_QUERY\nQEONS2 | OPERATION_NOT_SUPPORTED\nQEQNF2 | QUERY_NOT_FOUND\nQEQOE2 | OPERATOR_EXCEPTION\nQEQPE2 | QUERY_PARSE_EXCEPTION\nQEWCE2 | WRITE_CONFLICT_EXCEPTION\nSE0012 | UNKNOWN_SECURITY_EXCEPTION\nSE0IP2 | ILLEGAL_PASSWORD\nSE0RE2 | SECURITY_RESOURCE_EXISTS\nSEAEE2 | AUTHENTICATION_EXCEPTION\nSEAOE2 | AUTHORIZATION_EXCEPTION\nSEIPT2 | INCORRECT_PRINCIPAL_TRANSACTION\nSERIU2 | SECURITY_RESOURCE_IN_USE\nSERNF2 | SECURITY_RESOURCE_NOT_FOUND\nSERNI2 | SECURITY_RESOURCE_NAME_INVALID\nSERTI2 | SECURITY_RESOURCE_TYPE_INVALID\nTXFTE2 | FATAL_TRANSACTION_EXCEPTION\nTXHME2 | HEURISTIC_MIXED_EXCEPTION\nTXHRE2 | HEURISTIC_ROLLBACK\n",
+    "description": "# Overview\nHere be an overview of some kind\n\n# Error Codes\nHere are explanations of what the various error codes mean:\n\nError Code | Meaning\n-----------|--------\n000012 | UNKNOWN\n000IA2 | ILLEGAL_ARGUMENT\n000SD4 | SHUTTING_DOWN\n00UOE2 | UNSUPPORTED_OPERATION\n0D0012 | UNKNOWN_DATABASE_EXCEPTION\n0D0CE3 | DATABASE_CONSISTENCY_EXCEPTION\n0D0DC2 | DATABASE_CONFLICT\n0D0DE2 | DATABASE_EXISTS\n0D0DU2 | DATABASE_UNKNOWN\n0D0TU2 | TRANSACTION_UNKNOWN\n0DICC2 | INVALID_CONFIGURATION\n0DIDN2 | INVALID_DATABASE_NAME\n0DIDS2 | INVALID_DATABASE_STATE\nBIUDE2 | MISSING_DOCUMENT\nHS0012 | UNKNOWN_CONNECTION_EXCEPTION\nHSJSE2 | JSON_SYNTAX_EXCEPTION\nHSJSO2 | JSON_EXCEPTION\nHSSSL3 | SSL_EXCEPTION\nQE0012 | UNKNOWN_QUERY_EXCEPTION\nQE0FE2 | FUNCTION_EXISTS\nQE0PE2 | PARSE_EXCEPTION\nQE0QE2 | QUERY_EXISTS\nQECTP2 | CANNOT_TRANSLATE_PLAN\nQEFNF2 | FUNCTION_NOT_FOUND\nQEIQT2 | INVALID_QUERY_TYPE\nQEIVR2 | INVALID_RDF\nQEMAQ2 | MALFORMED_QUERY\nQEONS2 | OPERATION_NOT_SUPPORTED\nQEQNF2 | QUERY_NOT_FOUND\nQEQOE2 | OPERATOR_EXCEPTION\nQEQPE2 | QUERY_PARSE_EXCEPTION\nQEWCE2 | WRITE_CONFLICT_EXCEPTION\nSE0012 | UNKNOWN_SECURITY_EXCEPTION\nSE0IP2 | ILLEGAL_PASSWORD\nSE0RE2 | SECURITY_RESOURCE_EXISTS\nSEAEE2 | AUTHENTICATION_EXCEPTION\nSEAOE2 | AUTHORIZATION_EXCEPTION\nSEIPT2 | INCORRECT_PRINCIPAL_TRANSACTION\nSERIU2 | SECURITY_RESOURCE_IN_USE\nSERNF2 | SECURITY_RESOURCE_NOT_FOUND\nSERNI2 | SECURITY_RESOURCE_NAME_INVALID\nSERTI2 | SECURITY_RESOURCE_TYPE_INVALID\nTXFTE2 | FATAL_TRANSACTION_EXCEPTION\nTXHME2 | HEURISTIC_MIXED_EXCEPTION\nTXHRE2 | HEURISTIC_ROLLBACK\n",
     "contact": {
-      "email": "stephen@stardog.com"
+      "url": "https://stardog.com"
     },
-    "version": "7.3.0-SNAPSHOT-20200730"
+    "version": "7.3.5-SNAPSHOT-20200902"
   },
   "tags": [
     {
@@ -76,6 +76,10 @@
     {
       "name": "Virtual Graphs",
       "description": "Operations for virtualizing structured data"
+    },
+    {
+      "name": "Cluster Admin",
+      "description": "Cluster administration operations"
     }
   ],
   "paths": {
@@ -776,6 +780,167 @@
         }
       }
     },
+    "/admin/databases/{db}/options": {
+      "get": {
+        "tags": [
+          "DB Admin"
+        ],
+        "summary": "Get all DB options",
+        "description": "Get the value of every metadata option for a database",
+        "operationId": "getAllOptions",
+        "parameters": [
+          {
+            "name": "db",
+            "$ref": "#/components/parameters/db"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "JSON object detailing all database metadata",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "404": {
+            "description": "Database does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "required": [
+                    "message",
+                    "code"
+                  ],
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Database does not exist"
+                    },
+                    "code": {
+                      "type": "string",
+                      "example": "0D0DU2"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "DB Admin"
+        ],
+        "summary": "Get DB options",
+        "description": "Get the value of specific metadata options for a database",
+        "operationId": "getOptions",
+        "parameters": [
+          {
+            "name": "db",
+            "$ref": "#/components/parameters/db"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "example": {
+                "spatial.result.limit": null,
+                "query.all.graphs": null
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "spatial.result.limit": 10000,
+                  "query.all.graphs": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Database does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "required": [
+                    "message",
+                    "code"
+                  ],
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Database does not exist"
+                    },
+                    "code": {
+                      "type": "string",
+                      "example": "0D0DU2"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "DB Admin"
+        ],
+        "summary": "Set DB options",
+        "description": "Set the value of specific metadata options for a database",
+        "operationId": "setOption",
+        "parameters": [
+          {
+            "name": "db",
+            "$ref": "#/components/parameters/db"
+          }
+        ],
+        "requestBody": {
+          "description": "A JSON object with keys and values equal to the desired metadata options",
+          "content": {
+            "application/json": {
+              "example": {
+                "spatial.result.limit": 10000,
+                "query.all.graphs": true
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/GENERIC_RESPONSE_MESSAGE"
+          },
+          "404": {
+            "description": "Database does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "required": [
+                    "message",
+                    "code"
+                  ],
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Database does not exist"
+                    },
+                    "code": {
+                      "type": "string",
+                      "example": "0D0DU2"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/admin/restore": {
       "put": {
         "tags": [
@@ -1028,167 +1193,6 @@
         }
       }
     },
-    "/admin/databases/{db}/options": {
-      "get": {
-        "tags": [
-          "DB Admin"
-        ],
-        "summary": "Get all DB options",
-        "description": "Get the value of every metadata option for a database",
-        "operationId": "getAllOptions",
-        "parameters": [
-          {
-            "name": "db",
-            "$ref": "#/components/parameters/db"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "JSON object detailing all database metadata",
-            "content": {
-              "application/json": {}
-            }
-          },
-          "404": {
-            "description": "Database does not exist",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "required": [
-                    "message",
-                    "code"
-                  ],
-                  "properties": {
-                    "message": {
-                      "type": "string",
-                      "example": "Database does not exist"
-                    },
-                    "code": {
-                      "type": "string",
-                      "example": "0D0DU2"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
-      "put": {
-        "tags": [
-          "DB Admin"
-        ],
-        "summary": "Get DB options",
-        "description": "Get the value of specific metadata options for a database",
-        "operationId": "getOptions",
-        "parameters": [
-          {
-            "name": "db",
-            "$ref": "#/components/parameters/db"
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "example": {
-                "spatial.result.limit": null,
-                "query.all.graphs": null
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "example": {
-                  "spatial.result.limit": 10000,
-                  "query.all.graphs": true
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Database does not exist",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "required": [
-                    "message",
-                    "code"
-                  ],
-                  "properties": {
-                    "message": {
-                      "type": "string",
-                      "example": "Database does not exist"
-                    },
-                    "code": {
-                      "type": "string",
-                      "example": "0D0DU2"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "DB Admin"
-        ],
-        "summary": "Set DB options",
-        "description": "Set the value of specific metadata options for a database",
-        "operationId": "setOption",
-        "parameters": [
-          {
-            "name": "db",
-            "$ref": "#/components/parameters/db"
-          }
-        ],
-        "requestBody": {
-          "description": "A JSON object with keys and values equal to the desired metadata options",
-          "content": {
-            "application/json": {
-              "example": {
-                "spatial.result.limit": 10000,
-                "query.all.graphs": true
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "$ref": "#/components/responses/GENERIC_RESPONSE_MESSAGE"
-          },
-          "404": {
-            "description": "Database does not exist",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "required": [
-                    "message",
-                    "code"
-                  ],
-                  "properties": {
-                    "message": {
-                      "type": "string",
-                      "example": "Database does not exist"
-                    },
-                    "code": {
-                      "type": "string",
-                      "example": "0D0DU2"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/admin/databases/{db}/backup": {
       "put": {
         "tags": [
@@ -1319,7 +1323,7 @@
             }
           },
           "404": {
-            "description": "Transaction does not exist",
+            "description": "Database/Transaction does not exist",
             "content": {
               "application/json": {
                 "schema": {
@@ -1330,11 +1334,11 @@
                   "properties": {
                     "message": {
                       "type": "string",
-                      "example": "Transaction does not exist"
+                      "example": "Database does not exist"
                     },
                     "code": {
                       "type": "string",
-                      "example": "0D0TU2"
+                      "example": "0D0DU2"
                     }
                   }
                 }
@@ -1377,7 +1381,7 @@
             }
           },
           "404": {
-            "description": "Transaction does not exist",
+            "description": "Database/Transaction does not exist",
             "content": {
               "application/json": {
                 "schema": {
@@ -1388,11 +1392,11 @@
                   "properties": {
                     "message": {
                       "type": "string",
-                      "example": "Transaction does not exist"
+                      "example": "Database does not exist"
                     },
                     "code": {
                       "type": "string",
-                      "example": "0D0TU2"
+                      "example": "0D0DU2"
                     }
                   }
                 }
@@ -1428,7 +1432,7 @@
             "$ref": "#/components/responses/EMPTY_SUCCESS"
           },
           "404": {
-            "description": "Transaction does not exist",
+            "description": "Database/Transaction does not exist",
             "content": {
               "application/json": {
                 "schema": {
@@ -1439,11 +1443,11 @@
                   "properties": {
                     "message": {
                       "type": "string",
-                      "example": "Transaction does not exist"
+                      "example": "Database does not exist"
                     },
                     "code": {
                       "type": "string",
-                      "example": "0D0TU2"
+                      "example": "0D0DU2"
                     }
                   }
                 }
@@ -1485,6 +1489,106 @@
           },
           "404": {
             "description": "Database does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "required": [
+                    "message",
+                    "code"
+                  ],
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Database does not exist"
+                    },
+                    "code": {
+                      "type": "string",
+                      "example": "0D0DU2"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{db}/{txid}/add": {
+      "post": {
+        "tags": [
+          "Transactions"
+        ],
+        "summary": "Add data within a transaction",
+        "operationId": "add",
+        "parameters": [
+          {
+            "name": "db",
+            "$ref": "#/components/parameters/db"
+          },
+          {
+            "name": "txid",
+            "$ref": "#/components/parameters/txid"
+          },
+          {
+            "$ref": "#/components/parameters/graph-uri"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "text/turtle": {
+              "examples": {
+                "GENERIC_TURTLE": {
+                  "description": "GENERIC_TURTLE",
+                  "$ref": "#/components/examples/GENERIC_TURTLE"
+                }
+              }
+            },
+            "application/trig": {
+              "examples": {
+                "GENERIC_TRIG": {
+                  "description": "GENERIC_TRIG",
+                  "$ref": "#/components/examples/GENERIC_TRIG"
+                }
+              }
+            },
+            "application/rdf+xml": {
+              "examples": {
+                "GENERIC_RDFXML": {
+                  "description": "GENERIC_RDFXML",
+                  "$ref": "#/components/examples/GENERIC_RDFXML"
+                }
+              }
+            },
+            "application/n-triples": {
+              "examples": {
+                "GENERIC_NTRIPLES": {
+                  "description": "GENERIC_NTRIPLES",
+                  "$ref": "#/components/examples/GENERIC_NTRIPLES"
+                }
+              }
+            },
+            "application/n-quads": {
+              "examples": {
+                "GENERIC_NQUADS": {
+                  "description": "GENERIC_NQUADS",
+                  "$ref": "#/components/examples/GENERIC_NQUADS"
+                }
+              }
+            },
+            "application/ld+json": {
+              "schema": {
+                "$ref": "#/components/schemas/GENERIC_JSONLD"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/EMPTY_SUCCESS"
+          },
+          "404": {
+            "description": "Database/Transaction does not exist",
             "content": {
               "application/json": {
                 "schema": {
@@ -1584,7 +1688,7 @@
             "$ref": "#/components/responses/EMPTY_SUCCESS"
           },
           "404": {
-            "description": "Transaction does not exist",
+            "description": "Database/Transaction does not exist",
             "content": {
               "application/json": {
                 "schema": {
@@ -1595,11 +1699,11 @@
                   "properties": {
                     "message": {
                       "type": "string",
-                      "example": "Transaction does not exist"
+                      "example": "Database does not exist"
                     },
                     "code": {
                       "type": "string",
-                      "example": "0D0TU2"
+                      "example": "0D0DU2"
                     }
                   }
                 }
@@ -1634,7 +1738,7 @@
             "$ref": "#/components/responses/EMPTY_SUCCESS"
           },
           "404": {
-            "description": "Transaction does not exist",
+            "description": "Database/Transaction does not exist",
             "content": {
               "application/json": {
                 "schema": {
@@ -1645,111 +1749,11 @@
                   "properties": {
                     "message": {
                       "type": "string",
-                      "example": "Transaction does not exist"
+                      "example": "Database does not exist"
                     },
                     "code": {
                       "type": "string",
-                      "example": "0D0TU2"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/{db}/{txid}/add": {
-      "post": {
-        "tags": [
-          "Transactions"
-        ],
-        "summary": "Add data within a transaction",
-        "operationId": "add",
-        "parameters": [
-          {
-            "name": "db",
-            "$ref": "#/components/parameters/db"
-          },
-          {
-            "name": "txid",
-            "$ref": "#/components/parameters/txid"
-          },
-          {
-            "$ref": "#/components/parameters/graph-uri"
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "text/turtle": {
-              "examples": {
-                "GENERIC_TURTLE": {
-                  "description": "GENERIC_TURTLE",
-                  "$ref": "#/components/examples/GENERIC_TURTLE"
-                }
-              }
-            },
-            "application/trig": {
-              "examples": {
-                "GENERIC_TRIG": {
-                  "description": "GENERIC_TRIG",
-                  "$ref": "#/components/examples/GENERIC_TRIG"
-                }
-              }
-            },
-            "application/rdf+xml": {
-              "examples": {
-                "GENERIC_RDFXML": {
-                  "description": "GENERIC_RDFXML",
-                  "$ref": "#/components/examples/GENERIC_RDFXML"
-                }
-              }
-            },
-            "application/n-triples": {
-              "examples": {
-                "GENERIC_NTRIPLES": {
-                  "description": "GENERIC_NTRIPLES",
-                  "$ref": "#/components/examples/GENERIC_NTRIPLES"
-                }
-              }
-            },
-            "application/n-quads": {
-              "examples": {
-                "GENERIC_NQUADS": {
-                  "description": "GENERIC_NQUADS",
-                  "$ref": "#/components/examples/GENERIC_NQUADS"
-                }
-              }
-            },
-            "application/ld+json": {
-              "schema": {
-                "$ref": "#/components/schemas/GENERIC_JSONLD"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "$ref": "#/components/responses/EMPTY_SUCCESS"
-          },
-          "404": {
-            "description": "Transaction does not exist",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "required": [
-                    "message",
-                    "code"
-                  ],
-                  "properties": {
-                    "message": {
-                      "type": "string",
-                      "example": "Transaction does not exist"
-                    },
-                    "code": {
-                      "type": "string",
-                      "example": "0D0TU2"
+                      "example": "0D0DU2"
                     }
                   }
                 }
@@ -2835,6 +2839,53 @@
         }
       }
     },
+    "/admin/users/{user}/roles/{role}": {
+      "delete": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Remove role from user",
+        "operationId": "removeUserRole",
+        "parameters": [
+          {
+            "name": "user",
+            "$ref": "#/components/parameters/user"
+          },
+          {
+            "name": "role",
+            "$ref": "#/components/parameters/role"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Role successfully removed"
+          },
+          "404": {
+            "description": "User/Role does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "required": [
+                    "message",
+                    "code"
+                  ],
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "User does not exist"
+                    },
+                    "code": {
+                      "type": "string",
+                      "example": "SERNF2"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/admin/users": {
       "get": {
         "tags": [
@@ -2863,97 +2914,6 @@
           },
           "400": {
             "$ref": "#/components/responses/MALFORMED_REQUEST_400"
-          }
-        }
-      }
-    },
-    "/admin/users/{user}/enabled": {
-      "get": {
-        "tags": [
-          "Users"
-        ],
-        "summary": "User enabled",
-        "description": "Return whether or not a user is enabled (active) in the system",
-        "operationId": "userEnabled",
-        "parameters": [
-          {
-            "name": "user",
-            "$ref": "#/components/parameters/user"
-          }
-        ],
-        "responses": {
-          "200": {
-            "$ref": "#/components/responses/ENABLED"
-          },
-          "404": {
-            "description": "User does not exist",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "required": [
-                    "message",
-                    "code"
-                  ],
-                  "properties": {
-                    "message": {
-                      "type": "string",
-                      "example": "User does not exist"
-                    },
-                    "code": {
-                      "type": "string",
-                      "example": "SERNF2"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
-      "put": {
-        "tags": [
-          "Users"
-        ],
-        "summary": "Enable/Disable User",
-        "operationId": "setUserEnabled",
-        "parameters": [
-          {
-            "name": "user",
-            "$ref": "#/components/parameters/user"
-          }
-        ],
-        "requestBody": {
-          "$ref": "#/components/requestBodies/ENABLED"
-        },
-        "responses": {
-          "200": {
-            "description": "Flag set"
-          },
-          "400": {
-            "$ref": "#/components/responses/MALFORMED_REQUEST_400"
-          },
-          "404": {
-            "description": "User does not exist",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "required": [
-                    "message",
-                    "code"
-                  ],
-                  "properties": {
-                    "message": {
-                      "type": "string",
-                      "example": "User does not exist"
-                    },
-                    "code": {
-                      "type": "string",
-                      "example": "SERNF2"
-                    }
-                  }
-                }
-              }
-            }
           }
         }
       }
@@ -3146,53 +3106,6 @@
         }
       }
     },
-    "/admin/users/{user}/roles/{role}": {
-      "delete": {
-        "tags": [
-          "Users"
-        ],
-        "summary": "Remove role from user",
-        "operationId": "removeUserRole",
-        "parameters": [
-          {
-            "name": "user",
-            "$ref": "#/components/parameters/user"
-          },
-          {
-            "name": "role",
-            "$ref": "#/components/parameters/role"
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Role successfully removed"
-          },
-          "404": {
-            "description": "Role does not exist",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "required": [
-                    "message",
-                    "code"
-                  ],
-                  "properties": {
-                    "message": {
-                      "type": "string",
-                      "example": "Role does not exist"
-                    },
-                    "code": {
-                      "type": "string",
-                      "example": "SERNF2"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/admin/users/{user}": {
       "get": {
         "tags": [
@@ -3251,6 +3164,97 @@
         "responses": {
           "204": {
             "description": "User deleted"
+          },
+          "404": {
+            "description": "User does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "required": [
+                    "message",
+                    "code"
+                  ],
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "User does not exist"
+                    },
+                    "code": {
+                      "type": "string",
+                      "example": "SERNF2"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/users/{user}/enabled": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "User enabled",
+        "description": "Return whether or not a user is enabled (active) in the system",
+        "operationId": "userEnabled",
+        "parameters": [
+          {
+            "name": "user",
+            "$ref": "#/components/parameters/user"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/ENABLED"
+          },
+          "404": {
+            "description": "User does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "required": [
+                    "message",
+                    "code"
+                  ],
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "User does not exist"
+                    },
+                    "code": {
+                      "type": "string",
+                      "example": "SERNF2"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Enable/Disable User",
+        "operationId": "setUserEnabled",
+        "parameters": [
+          {
+            "name": "user",
+            "$ref": "#/components/parameters/user"
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/ENABLED"
+        },
+        "responses": {
+          "200": {
+            "description": "Flag set"
+          },
+          "400": {
+            "$ref": "#/components/responses/MALFORMED_REQUEST_400"
           },
           "404": {
             "description": "User does not exist",
@@ -3734,106 +3738,6 @@
         }
       }
     },
-    "/admin/queries/{queryName}": {
-      "get": {
-        "tags": [
-          "Queries"
-        ],
-        "summary": "Get query",
-        "description": "Get details of a specific query",
-        "operationId": "getQuery",
-        "parameters": [
-          {
-            "name": "queryName",
-            "$ref": "#/components/parameters/queryName"
-          }
-        ],
-        "responses": {
-          "200": {
-            "$ref": "#/components/responses/QUERY_LIST"
-          },
-          "404": {
-            "description": "Query does not exist",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "required": [
-                    "message",
-                    "code"
-                  ],
-                  "properties": {
-                    "message": {
-                      "type": "string",
-                      "example": "Query does not exist"
-                    },
-                    "code": {
-                      "type": "string",
-                      "example": "QEQNF2"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "Queries"
-        ],
-        "summary": "Kill query",
-        "operationId": "killQuery",
-        "parameters": [
-          {
-            "name": "queryName",
-            "$ref": "#/components/parameters/queryName"
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Query killed"
-          },
-          "404": {
-            "description": "Query does not exist",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "required": [
-                    "message",
-                    "code"
-                  ],
-                  "properties": {
-                    "message": {
-                      "type": "string",
-                      "example": "Query does not exist"
-                    },
-                    "code": {
-                      "type": "string",
-                      "example": "QEQNF2"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/admin/queries": {
-      "get": {
-        "tags": [
-          "Queries"
-        ],
-        "summary": "List queries",
-        "description": "Get a list of all running queries",
-        "operationId": "listQueries",
-        "responses": {
-          "200": {
-            "$ref": "#/components/responses/QUERY_LIST"
-          }
-        }
-      }
-    },
     "/admin/queries/stored": {
       "get": {
         "tags": [
@@ -4021,6 +3925,106 @@
             "description": "default response",
             "content": {
               "*/*": {}
+            }
+          }
+        }
+      }
+    },
+    "/admin/queries": {
+      "get": {
+        "tags": [
+          "Queries"
+        ],
+        "summary": "List queries",
+        "description": "Get a list of all running queries",
+        "operationId": "listQueries",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/QUERY_LIST"
+          }
+        }
+      }
+    },
+    "/admin/queries/{queryName}": {
+      "get": {
+        "tags": [
+          "Queries"
+        ],
+        "summary": "Get query",
+        "description": "Get details of a specific query",
+        "operationId": "getQuery",
+        "parameters": [
+          {
+            "name": "queryName",
+            "$ref": "#/components/parameters/queryName"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/QUERY_LIST"
+          },
+          "404": {
+            "description": "Query does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "required": [
+                    "message",
+                    "code"
+                  ],
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Query does not exist"
+                    },
+                    "code": {
+                      "type": "string",
+                      "example": "QEQNF2"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Queries"
+        ],
+        "summary": "Kill query",
+        "operationId": "killQuery",
+        "parameters": [
+          {
+            "name": "queryName",
+            "$ref": "#/components/parameters/queryName"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Query killed"
+          },
+          "404": {
+            "description": "Query does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "required": [
+                    "message",
+                    "code"
+                  ],
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Query does not exist"
+                    },
+                    "code": {
+                      "type": "string",
+                      "example": "QEQNF2"
+                    }
+                  }
+                }
+              }
             }
           }
         }
@@ -4344,6 +4348,98 @@
         }
       }
     },
+    "/{db}/docs/{docName}": {
+      "get": {
+        "tags": [
+          "BITES"
+        ],
+        "summary": "Retrieve a document from the document store",
+        "operationId": "getDocument",
+        "parameters": [
+          {
+            "name": "db",
+            "$ref": "#/components/parameters/db"
+          },
+          {
+            "name": "docName",
+            "$ref": "#/components/parameters/docName"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The requested document, in its native format"
+          },
+          "404": {
+            "description": "Database/Document does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "required": [
+                    "message",
+                    "code"
+                  ],
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Database does not exist"
+                    },
+                    "code": {
+                      "type": "string",
+                      "example": "0D0DU2"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "BITES"
+        ],
+        "summary": "Delete a document from the document store",
+        "operationId": "removeDocument",
+        "parameters": [
+          {
+            "name": "db",
+            "$ref": "#/components/parameters/db"
+          },
+          {
+            "name": "docName",
+            "$ref": "#/components/parameters/docName"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Document deleted"
+          },
+          "404": {
+            "description": "Database/Document does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "required": [
+                    "message",
+                    "code"
+                  ],
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Database does not exist"
+                    },
+                    "code": {
+                      "type": "string",
+                      "example": "0D0DU2"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/{db}/docs": {
       "post": {
         "tags": [
@@ -4435,98 +4531,6 @@
                     "code": {
                       "type": "string",
                       "example": "0D0DU2"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/{db}/docs/{docName}": {
-      "get": {
-        "tags": [
-          "BITES"
-        ],
-        "summary": "Retrieve a document from the document store",
-        "operationId": "getDocument",
-        "parameters": [
-          {
-            "name": "db",
-            "$ref": "#/components/parameters/db"
-          },
-          {
-            "name": "docName",
-            "$ref": "#/components/parameters/docName"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "The requested document, in its native format"
-          },
-          "404": {
-            "description": "Document does not exist",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "required": [
-                    "message",
-                    "code"
-                  ],
-                  "properties": {
-                    "message": {
-                      "type": "string",
-                      "example": "Document does not exist"
-                    },
-                    "code": {
-                      "type": "string",
-                      "example": "BIUDE2"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "BITES"
-        ],
-        "summary": "Delete a document from the document store",
-        "operationId": "removeDocument",
-        "parameters": [
-          {
-            "name": "db",
-            "$ref": "#/components/parameters/db"
-          },
-          {
-            "name": "docName",
-            "$ref": "#/components/parameters/docName"
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Document deleted"
-          },
-          "404": {
-            "description": "Document does not exist",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "required": [
-                    "message",
-                    "code"
-                  ],
-                  "properties": {
-                    "message": {
-                      "type": "string",
-                      "example": "Document does not exist"
-                    },
-                    "code": {
-                      "type": "string",
-                      "example": "BIUDE2"
                     }
                   }
                 }
@@ -4644,6 +4648,10 @@
             "$ref": "#/components/parameters/db"
           },
           {
+            "name": "schema",
+            "$ref": "#/components/parameters/schema"
+          },
+          {
             "name": "query",
             "in": "query",
             "required": true,
@@ -4665,7 +4673,7 @@
             "$ref": "#/components/responses/GRAPHQL_QUERY_RESULT"
           },
           "404": {
-            "description": "Database does not exist",
+            "description": "Database/Schema does not exist",
             "content": {
               "application/json": {
                 "schema": {
@@ -4702,6 +4710,10 @@
           },
           {
             "name": "schema",
+            "$ref": "#/components/parameters/schema"
+          },
+          {
+            "name": "schema",
             "in": "path",
             "required": true,
             "schema": {
@@ -4724,7 +4736,279 @@
             "$ref": "#/components/responses/GRAPHQL_QUERY_RESULT"
           },
           "404": {
+            "description": "Database/Schema does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "required": [
+                    "message",
+                    "code"
+                  ],
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Database does not exist"
+                    },
+                    "code": {
+                      "type": "string",
+                      "example": "0D0DU2"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{db}/graphql/schemas": {
+      "get": {
+        "tags": [
+          "GraphQL"
+        ],
+        "summary": "List schemas",
+        "operationId": "listSchemas",
+        "parameters": [
+          {
+            "name": "db",
+            "$ref": "#/components/parameters/db"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/GRAPHQL_SCHEMAS"
+          },
+          "404": {
             "description": "Database does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "required": [
+                    "message",
+                    "code"
+                  ],
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Database does not exist"
+                    },
+                    "code": {
+                      "type": "string",
+                      "example": "0D0DU2"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "GraphQL"
+        ],
+        "summary": "Clear schemas",
+        "operationId": "clearSchemas",
+        "parameters": [
+          {
+            "name": "db",
+            "$ref": "#/components/parameters/db"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Schemas cleared"
+          },
+          "404": {
+            "description": "Database does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "required": [
+                    "message",
+                    "code"
+                  ],
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Database does not exist"
+                    },
+                    "code": {
+                      "type": "string",
+                      "example": "0D0DU2"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{db}/graphql/schemas/{schema}": {
+      "get": {
+        "tags": [
+          "GraphQL"
+        ],
+        "summary": "Get schema",
+        "operationId": "getSchema",
+        "parameters": [
+          {
+            "name": "db",
+            "$ref": "#/components/parameters/db"
+          },
+          {
+            "name": "schema",
+            "$ref": "#/components/parameters/schema"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/GRAPHQL_SCHEMA"
+          },
+          "404": {
+            "description": "Database/Schema does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "required": [
+                    "message",
+                    "code"
+                  ],
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Database does not exist"
+                    },
+                    "code": {
+                      "type": "string",
+                      "example": "0D0DU2"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "GraphQL"
+        ],
+        "summary": "Update schema",
+        "operationId": "updateSchema",
+        "parameters": [
+          {
+            "name": "db",
+            "$ref": "#/components/parameters/db"
+          },
+          {
+            "name": "schema",
+            "$ref": "#/components/parameters/schema"
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/GRAPHQL_SCHEMA"
+        },
+        "responses": {
+          "200": {
+            "description": "Schema updated"
+          },
+          "404": {
+            "description": "Database/Schema does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "required": [
+                    "message",
+                    "code"
+                  ],
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Database does not exist"
+                    },
+                    "code": {
+                      "type": "string",
+                      "example": "0D0DU2"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "GraphQL"
+        ],
+        "summary": "Add schema",
+        "operationId": "addSchema",
+        "parameters": [
+          {
+            "name": "db",
+            "$ref": "#/components/parameters/db"
+          },
+          {
+            "name": "schema",
+            "$ref": "#/components/parameters/schema"
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/GRAPHQL_SCHEMA"
+        },
+        "responses": {
+          "201": {
+            "description": "Schema added"
+          },
+          "404": {
+            "description": "Database/Schema does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "required": [
+                    "message",
+                    "code"
+                  ],
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Database does not exist"
+                    },
+                    "code": {
+                      "type": "string",
+                      "example": "0D0DU2"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "GraphQL"
+        ],
+        "summary": "Remove schema",
+        "operationId": "removeSchema",
+        "parameters": [
+          {
+            "name": "db",
+            "$ref": "#/components/parameters/db"
+          },
+          {
+            "name": "schema",
+            "$ref": "#/components/parameters/schema"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Schema removed"
+          },
+          "404": {
+            "description": "Database/Schema does not exist",
             "content": {
               "application/json": {
                 "schema": {
@@ -5502,7 +5786,7 @@
             }
           },
           "404": {
-            "description": "Transaction does not exist",
+            "description": "Database/Transaction does not exist",
             "content": {
               "application/json": {
                 "schema": {
@@ -5513,11 +5797,11 @@
                   "properties": {
                     "message": {
                       "type": "string",
-                      "example": "Transaction does not exist"
+                      "example": "Database does not exist"
                     },
                     "code": {
                       "type": "string",
-                      "example": "0D0TU2"
+                      "example": "0D0DU2"
                     }
                   }
                 }
@@ -5728,7 +6012,7 @@
             }
           },
           "404": {
-            "description": "Transaction does not exist",
+            "description": "Database/Transaction does not exist",
             "content": {
               "application/json": {
                 "schema": {
@@ -5739,11 +6023,11 @@
                   "properties": {
                     "message": {
                       "type": "string",
-                      "example": "Transaction does not exist"
+                      "example": "Database does not exist"
                     },
                     "code": {
                       "type": "string",
-                      "example": "0D0TU2"
+                      "example": "0D0DU2"
                     }
                   }
                 }
@@ -5990,7 +6274,7 @@
             }
           },
           "404": {
-            "description": "Transaction does not exist",
+            "description": "Database/Transaction does not exist",
             "content": {
               "application/json": {
                 "schema": {
@@ -6001,11 +6285,11 @@
                   "properties": {
                     "message": {
                       "type": "string",
-                      "example": "Transaction does not exist"
+                      "example": "Database does not exist"
                     },
                     "code": {
                       "type": "string",
-                      "example": "0D0TU2"
+                      "example": "0D0DU2"
                     }
                   }
                 }
@@ -6306,7 +6590,7 @@
             "$ref": "#/components/responses/REASONING_PROOF_LIST"
           },
           "404": {
-            "description": "Transaction does not exist",
+            "description": "Database/Transaction does not exist",
             "content": {
               "application/json": {
                 "schema": {
@@ -6317,113 +6601,11 @@
                   "properties": {
                     "message": {
                       "type": "string",
-                      "example": "Transaction does not exist"
+                      "example": "Database does not exist"
                     },
                     "code": {
                       "type": "string",
-                      "example": "0D0TU2"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/{db}/reasoning/{txid}/explain": {
-      "post": {
-        "tags": [
-          "Reasoning"
-        ],
-        "summary": "Explain inference in transaction",
-        "description": "Explain how the inference engine inferred a specific piece of data",
-        "operationId": "explainInferenceInTx",
-        "parameters": [
-          {
-            "name": "db",
-            "$ref": "#/components/parameters/db"
-          },
-          {
-            "name": "txid",
-            "$ref": "#/components/parameters/txid"
-          }
-        ],
-        "requestBody": {
-          "description": "The axiom to explain",
-          "content": {
-            "text/turtle": {
-              "examples": {
-                "REASONING_AXIOM_TTL": {
-                  "description": "REASONING_AXIOM_TTL",
-                  "$ref": "#/components/examples/REASONING_AXIOM_TTL"
-                }
-              }
-            },
-            "application/trig": {
-              "examples": {
-                "REASONING_AXIOM_TTL": {
-                  "description": "REASONING_AXIOM_TTL",
-                  "$ref": "#/components/examples/REASONING_AXIOM_TTL"
-                }
-              }
-            },
-            "application/rdf+xml": {
-              "examples": {
-                "REASONING_AXIOM_RDFXML": {
-                  "description": "REASONING_AXIOM_RDFXML",
-                  "$ref": "#/components/examples/REASONING_AXIOM_RDFXML"
-                }
-              }
-            },
-            "application/n-triples": {
-              "examples": {
-                "REASONING_AXIOM_TTL": {
-                  "description": "REASONING_AXIOM_TTL",
-                  "$ref": "#/components/examples/REASONING_AXIOM_TTL"
-                }
-              }
-            },
-            "application/n-quads": {
-              "examples": {
-                "REASONING_AXIOM_TTL": {
-                  "description": "REASONING_AXIOM_TTL",
-                  "$ref": "#/components/examples/REASONING_AXIOM_TTL"
-                }
-              }
-            },
-            "application/ld+json": {
-              "examples": {
-                "REASONING_AXIOM_JSONLD": {
-                  "description": "REASONING_AXIOM_JSONLD",
-                  "$ref": "#/components/examples/REASONING_AXIOM_JSONLD"
-                }
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "$ref": "#/components/responses/REASONING_PROOF_LIST"
-          },
-          "404": {
-            "description": "Transaction does not exist",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "required": [
-                    "message",
-                    "code"
-                  ],
-                  "properties": {
-                    "message": {
-                      "type": "string",
-                      "example": "Transaction does not exist"
-                    },
-                    "code": {
-                      "type": "string",
-                      "example": "0D0TU2"
+                      "example": "0D0DU2"
                     }
                   }
                 }
@@ -6767,6 +6949,108 @@
         }
       }
     },
+    "/{db}/reasoning/{txid}/explain": {
+      "post": {
+        "tags": [
+          "Reasoning"
+        ],
+        "summary": "Explain inference in transaction",
+        "description": "Explain how the inference engine inferred a specific piece of data",
+        "operationId": "explainInferenceInTx",
+        "parameters": [
+          {
+            "name": "db",
+            "$ref": "#/components/parameters/db"
+          },
+          {
+            "name": "txid",
+            "$ref": "#/components/parameters/txid"
+          }
+        ],
+        "requestBody": {
+          "description": "The axiom to explain",
+          "content": {
+            "text/turtle": {
+              "examples": {
+                "REASONING_AXIOM_TTL": {
+                  "description": "REASONING_AXIOM_TTL",
+                  "$ref": "#/components/examples/REASONING_AXIOM_TTL"
+                }
+              }
+            },
+            "application/trig": {
+              "examples": {
+                "REASONING_AXIOM_TTL": {
+                  "description": "REASONING_AXIOM_TTL",
+                  "$ref": "#/components/examples/REASONING_AXIOM_TTL"
+                }
+              }
+            },
+            "application/rdf+xml": {
+              "examples": {
+                "REASONING_AXIOM_RDFXML": {
+                  "description": "REASONING_AXIOM_RDFXML",
+                  "$ref": "#/components/examples/REASONING_AXIOM_RDFXML"
+                }
+              }
+            },
+            "application/n-triples": {
+              "examples": {
+                "REASONING_AXIOM_TTL": {
+                  "description": "REASONING_AXIOM_TTL",
+                  "$ref": "#/components/examples/REASONING_AXIOM_TTL"
+                }
+              }
+            },
+            "application/n-quads": {
+              "examples": {
+                "REASONING_AXIOM_TTL": {
+                  "description": "REASONING_AXIOM_TTL",
+                  "$ref": "#/components/examples/REASONING_AXIOM_TTL"
+                }
+              }
+            },
+            "application/ld+json": {
+              "examples": {
+                "REASONING_AXIOM_JSONLD": {
+                  "description": "REASONING_AXIOM_JSONLD",
+                  "$ref": "#/components/examples/REASONING_AXIOM_JSONLD"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/REASONING_PROOF_LIST"
+          },
+          "404": {
+            "description": "Database/Transaction does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "required": [
+                    "message",
+                    "code"
+                  ],
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Database does not exist"
+                    },
+                    "code": {
+                      "type": "string",
+                      "example": "0D0DU2"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/{db}/reasoning/explain/inconsistency": {
       "get": {
         "tags": [
@@ -6811,63 +7095,24 @@
         }
       }
     },
-    "/admin/virtual_graphs/{vgName}/info": {
+    "/admin/virtual_graphs/{vgName}/database": {
       "get": {
         "tags": [
           "Virtual Graphs"
         ],
-        "summary": "Get virtual graph info",
-        "operationId": "virtualGraphInfo",
+        "summary": "Get database",
+        "description": "Get the database associated with a virtual graph",
+        "operationId": "getVGDatabase",
         "responses": {
           "200": {
-            "$ref": "#/components/responses/SINGLE_VIRTUAL_GRAPH_INFO"
-          }
-        }
-      }
-    },
-    "/admin/virtual_graphs": {
-      "get": {
-        "tags": [
-          "Virtual Graphs"
-        ],
-        "summary": "List virtual graphs",
-        "operationId": "list",
-        "responses": {
-          "200": {
-            "$ref": "#/components/responses/VIRTUAL_GRAPH_NAME_LIST"
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "Virtual Graphs"
-        ],
-        "summary": "Add virtual graph",
-        "operationId": "add",
-        "requestBody": {
-          "$ref": "#/components/requestBodies/VIRTUAL_GRAPH_CREATE"
-        },
-        "responses": {
-          "201": {
-            "description": "Virtual graph created"
-          }
-        }
-      }
-    },
-    "/admin/virtual_graphs/import_db": {
-      "post": {
-        "tags": [
-          "Virtual Graphs"
-        ],
-        "summary": "Import virtual graph",
-        "description": "Import (materialize) a virtual graph directly into the local knowledge graph",
-        "operationId": "importDb",
-        "requestBody": {
-          "$ref": "#/components/requestBodies/VIRTUAL_GRAPH_IMPORT"
-        },
-        "responses": {
-          "204": {
-            "description": "Virtual graph imported"
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "description": "The database name, or * if one was not specified"
+                }
+              }
+            }
           }
         }
       }
@@ -6878,7 +7123,7 @@
           "Virtual Graphs"
         ],
         "summary": "Get mappings",
-        "operationId": "getMappingsForSyntax",
+        "operationId": "getVGMappingsForSyntax",
         "parameters": [
           {
             "name": "syntax",
@@ -6944,44 +7189,45 @@
         }
       }
     },
-    "/admin/virtual_graphs/{vgName}/options": {
+    "/admin/virtual_graphs/{vgName}/info": {
       "get": {
         "tags": [
           "Virtual Graphs"
         ],
-        "summary": "Get virtual graph options",
-        "operationId": "getOptions",
+        "summary": "Get virtual graph info",
+        "operationId": "virtualGraphInfo",
         "responses": {
           "200": {
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/VIRTUAL_GRAPH_OPTIONS"
-                }
-              }
-            }
+            "$ref": "#/components/responses/SINGLE_VIRTUAL_GRAPH_INFO"
           }
         }
       }
     },
-    "/admin/virtual_graphs/{vgName}/available": {
-      "get": {
+    "/admin/virtual_graphs/{vgName}": {
+      "put": {
         "tags": [
           "Virtual Graphs"
         ],
-        "summary": "Available",
-        "description": "Returns whether or not the virtual graph is available",
-        "operationId": "available",
+        "summary": "Update virtual graph",
+        "operationId": "updateVG",
+        "requestBody": {
+          "$ref": "#/components/requestBodies/VIRTUAL_GRAPH_CREATE"
+        },
         "responses": {
-          "200": {
-            "content": {
-              "text/plain": {},
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/VIRTUAL_GRAPH_AVAILABLE"
-                }
-              }
-            }
+          "201": {
+            "description": "Virtual graph updated"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Virtual Graphs"
+        ],
+        "summary": "Delete virtual graph",
+        "operationId": "deleteVG",
+        "responses": {
+          "204": {
+            "description": "Virtual graph deleted"
           }
         }
       }
@@ -6993,7 +7239,7 @@
         ],
         "summary": "Import file",
         "description": "Import a CSV or JSON file as a virtual graph into the knowledge graph",
-        "operationId": "importFile",
+        "operationId": "importFileVG",
         "requestBody": {
           "content": {
             "multipart/form-data": {
@@ -7010,31 +7256,20 @@
         }
       }
     },
-    "/admin/virtual_graphs/{vgName}": {
-      "put": {
+    "/admin/virtual_graphs/import_db": {
+      "post": {
         "tags": [
           "Virtual Graphs"
         ],
-        "summary": "Update virtual graph",
-        "operationId": "update",
+        "summary": "Import virtual graph",
+        "description": "Import (materialize) a virtual graph directly into the local knowledge graph",
+        "operationId": "importDb",
         "requestBody": {
-          "$ref": "#/components/requestBodies/VIRTUAL_GRAPH_CREATE"
+          "$ref": "#/components/requestBodies/VIRTUAL_GRAPH_IMPORT"
         },
         "responses": {
-          "201": {
-            "description": "Virtual graph updated"
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "Virtual Graphs"
-        ],
-        "summary": "Delete virtual graph",
-        "operationId": "delete",
-        "responses": {
           "204": {
-            "description": "Virtual graph deleted"
+            "description": "Virtual graph imported"
           }
         }
       }
@@ -7045,7 +7280,7 @@
           "Virtual Graphs"
         ],
         "summary": "Online virtual graph",
-        "operationId": "online",
+        "operationId": "onlineVG",
         "responses": {
           "204": {
             "description": "Virtual graph onlined"
@@ -7053,21 +7288,70 @@
         }
       }
     },
-    "/admin/virtual_graphs/{vgName}/database": {
+    "/admin/virtual_graphs": {
       "get": {
         "tags": [
           "Virtual Graphs"
         ],
-        "summary": "Get database",
-        "description": "Get the database associated with a virtual graph",
-        "operationId": "getDatabase",
+        "summary": "List virtual graphs",
+        "operationId": "listVGs",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/VIRTUAL_GRAPH_NAME_LIST"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Virtual Graphs"
+        ],
+        "summary": "Add virtual graph",
+        "operationId": "addVG",
+        "requestBody": {
+          "$ref": "#/components/requestBodies/VIRTUAL_GRAPH_CREATE"
+        },
+        "responses": {
+          "201": {
+            "description": "Virtual graph created"
+          }
+        }
+      }
+    },
+    "/admin/virtual_graphs/{vgName}/available": {
+      "get": {
+        "tags": [
+          "Virtual Graphs"
+        ],
+        "summary": "Available",
+        "description": "Returns whether or not the virtual graph is available",
+        "operationId": "vgAvailable",
         "responses": {
           "200": {
             "content": {
-              "text/plain": {
+              "text/plain": {},
+              "application/json": {
                 "schema": {
-                  "type": "string",
-                  "description": "The database name, or * if one was not specified"
+                  "$ref": "#/components/schemas/VIRTUAL_GRAPH_AVAILABLE"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/virtual_graphs/{vgName}/options": {
+      "get": {
+        "tags": [
+          "Virtual Graphs"
+        ],
+        "summary": "Get virtual graph options",
+        "operationId": "getVGOptions",
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/VIRTUAL_GRAPH_OPTIONS"
                 }
               }
             }
@@ -7085,6 +7369,191 @@
         "responses": {
           "200": {
             "$ref": "#/components/responses/VIRTUAL_GRAPH_LIST"
+          }
+        }
+      }
+    },
+    "/admin/cluster/standby/registry": {
+      "get": {
+        "tags": [
+          "Cluster Admin"
+        ],
+        "summary": "List standby nodes",
+        "operationId": "getStandbyNodes",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/STANDBY_NODE_LIST"
+          }
+        },
+        "x-sort-order": {
+          "group": "1",
+          "order": "1"
+        }
+      }
+    },
+    "/admin/cluster/standby/join": {
+      "put": {
+        "tags": [
+          "Cluster Admin"
+        ],
+        "summary": "Join cluster",
+        "description": "Instruct a standby node to join its cluster as a full node",
+        "operationId": "standbyJoin",
+        "responses": {
+          "200": {
+            "description": "Node has been instructed to join"
+          },
+          "400": {
+            "description": "Node is not a standby node"
+          }
+        },
+        "x-sort-order": {
+          "group": "1",
+          "order": "2"
+        }
+      }
+    },
+    "/admin/cluster/standby/pause": {
+      "get": {
+        "tags": [
+          "Cluster Admin"
+        ],
+        "summary": "Get standby pause status",
+        "description": "Get the pause status of a standby node",
+        "operationId": "getPauseState",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/STANDBY_PAUSED"
+          },
+          "400": {
+            "description": "Node is not a standby node"
+          }
+        },
+        "x-sort-order": {
+          "group": "1",
+          "order": "4"
+        }
+      },
+      "put": {
+        "tags": [
+          "Cluster Admin"
+        ],
+        "summary": "Pause/Unpause standby node",
+        "operationId": "standbyPause",
+        "parameters": [
+          {
+            "name": "pause",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pause/Unpause requested"
+          },
+          "400": {
+            "description": "Node is not a standby node"
+          }
+        },
+        "x-sort-order": {
+          "group": "1",
+          "order": "3"
+        }
+      }
+    },
+    "/admin/cluster/standby/registry/{standbyid}": {
+      "delete": {
+        "tags": [
+          "Cluster Admin"
+        ],
+        "summary": "Revoke standby access",
+        "description": "Instruct a standby node to leave its cluster",
+        "operationId": "standbyRevokeAccess",
+        "parameters": [
+          {
+            "name": "standbyid",
+            "$ref": "#/components/parameters/standbyid"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Node has been instructed to leave"
+          },
+          "400": {
+            "description": "Node is not a standby node"
+          }
+        },
+        "x-sort-order": {
+          "group": "1",
+          "order": "5"
+        }
+      }
+    },
+    "/admin/cluster/status": {
+      "get": {
+        "tags": [
+          "Cluster Admin"
+        ],
+        "summary": "Get cluster status",
+        "operationId": "packStatus",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/CLUSTER_STATUS"
+          }
+        }
+      }
+    },
+    "/admin/cluster": {
+      "get": {
+        "tags": [
+          "Cluster Admin"
+        ],
+        "summary": "Get cluster info",
+        "operationId": "clusterInfo",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/NODE_LIST"
+          },
+          "404": {
+            "$ref": "#/components/responses/CLUSTER_404"
+          }
+        }
+      }
+    },
+    "/admin/cluster/coordinator": {
+      "get": {
+        "tags": [
+          "Cluster Admin"
+        ],
+        "summary": "Coordinator check",
+        "description": "Determine if a specific cluster node is the cluster coordinator",
+        "operationId": "isCoordinator",
+        "responses": {
+          "200": {
+            "description": "Node is coordinator"
+          },
+          "503": {
+            "description": "Node is not coordinator"
+          }
+        }
+      }
+    },
+    "/admin/shutdownAll": {
+      "post": {
+        "tags": [
+          "Cluster Admin"
+        ],
+        "summary": "Shutdown all nodes",
+        "operationId": "shutdownAll",
+        "responses": {
+          "200": {
+            "description": "Shutdown request received"
+          },
+          "405": {
+            "description": "Remote shutdown not supported"
           }
         }
       }
@@ -7341,7 +7810,7 @@
         "properties": {
           "id": {
             "type": "string",
-            "format": "UUID",
+            "format": "uuid",
             "example": "4ea1ebac-48f0-459c-a9a7-6cad7189403d"
           },
           "db": {
@@ -7603,7 +8072,8 @@
               "VIRTUAL_GRAPH",
               "DBMS_ADMIN",
               "DATABASE_METADATA",
-              "DATABASE_ADMIN"
+              "DATABASE_ADMIN",
+              "SENSITIVE_PROPERTIES"
             ]
           },
           "resource": {
@@ -7647,7 +8117,8 @@
               "VIRTUAL_GRAPH",
               "DBMS_ADMIN",
               "DATABASE_METADATA",
-              "DATABASE_ADMIN"
+              "DATABASE_ADMIN",
+              "SENSITIVE_PROPERTIES"
             ]
           },
           "resource": {
@@ -7804,6 +8275,19 @@
               "additionalProperties": {
                 "type": "string"
               }
+            }
+          }
+        }
+      },
+      "GRAPHQL_SCHEMAS": {
+        "required": [
+          "schemas"
+        ],
+        "properties": {
+          "schemas": {
+            "type": "array",
+            "items": {
+              "type": "string"
             }
           }
         }
@@ -8316,6 +8800,86 @@
             "type": "string"
           }
         }
+      },
+      "NODE_LIST": {
+        "required": [
+          "nodes"
+        ],
+        "properties": {
+          "nodes": {
+            "type": "array",
+            "items": {
+              "pattern": "^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}(:[0-9]{3,5})?$",
+              "type": "string",
+              "example": "165.7.29.42:5820"
+            }
+          }
+        }
+      },
+      "CLUSTER_STATUS": {
+        "properties": {
+          "nodes": {
+            "required": [
+              "nodes"
+            ],
+            "type": "array",
+            "items": {
+              "required": [
+                "address",
+                "metadata",
+                "type"
+              ],
+              "properties": {
+                "address": {
+                  "pattern": "^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}(:[0-9]{3,5})?$",
+                  "type": "string",
+                  "example": "165.7.29.42:5820"
+                },
+                "metadata": {
+                  "type": "object"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "FULL",
+                    "STANDBY"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "STANDBY_NODE_LIST": {
+        "required": [
+          "standbynodes"
+        ],
+        "properties": {
+          "standbynodes": {
+            "type": "array",
+            "items": {
+              "pattern": "^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}(:[0-9]{3,5})?$",
+              "type": "string",
+              "example": "165.7.29.42:5820"
+            }
+          }
+        }
+      },
+      "STANDBY_PAUSED": {
+        "required": [
+          "STATE"
+        ],
+        "properties": {
+          "STATE": {
+            "type": "string",
+            "enum": [
+              "WAITING",
+              "SYNCING",
+              "PAUSING",
+              "PAUSED"
+            ]
+          }
+        }
       }
     },
     "responses": {
@@ -8451,6 +9015,24 @@
           }
         }
       },
+      "GRAPHQL_SCHEMAS": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/GRAPHQL_SCHEMAS"
+            }
+          }
+        }
+      },
+      "GRAPHQL_SCHEMA": {
+        "content": {
+          "application/graphql": {
+            "example": {
+              "$ref": "#/components/examples/GRAPHQL_SCHEMA"
+            }
+          }
+        }
+      },
       "CACHE_TARGET_LIST": {
         "content": {
           "application/json": {
@@ -8531,6 +9113,45 @@
             }
           }
         }
+      },
+      "CLUSTER_404": {
+        "description": "Not part of a cluster"
+      },
+      "NODE_LIST": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/NODE_LIST"
+            }
+          }
+        }
+      },
+      "CLUSTER_STATUS": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/CLUSTER_STATUS"
+            }
+          }
+        }
+      },
+      "STANDBY_NODE_LIST": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/STANDBY_NODE_LIST"
+            }
+          }
+        }
+      },
+      "STANDBY_PAUSED": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/STANDBY_PAUSED"
+            }
+          }
+        }
       }
     },
     "parameters": {
@@ -8551,7 +9172,7 @@
         "required": true,
         "schema": {
           "type": "string",
-          "format": "UUID",
+          "format": "uuid",
           "example": "4ea1ebac-48f0-459c-a9a7-6cad7189403d"
         }
       },
@@ -8632,6 +9253,26 @@
         "name": "docName",
         "in": "path",
         "description": "The name of the document",
+        "required": true,
+        "schema": {
+          "type": "string"
+        }
+      },
+      "standbyid": {
+        "name": "standbyid",
+        "in": "path",
+        "description": "The UUID of the standby node",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid",
+          "example": "4ea1ebac-48f0-459c-a9a7-6cad7189403d"
+        }
+      },
+      "schema": {
+        "name": "schema",
+        "in": "path",
+        "description": "The name of the schema",
         "required": true,
         "schema": {
           "type": "string"
@@ -8725,6 +9366,9 @@
       },
       "ICV_SPARQL_QUERY": {
         "value": "SELECT DISTINCT *\nFROM <tag:stardog:api:context:local>\nWHERE {\n   ?x0 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <urn:Employee> .\n   FILTER NOT EXISTS {\n      ?x0 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <urn:Person> .\n   }\n}"
+      },
+      "GRAPHQL_SCHEMA": {
+        "value": "type Author {\n  id: Int!\n  firstName: String\n  lastName: String\n  posts: [Post]\n}type Post {\n  id: Int!\n  title: String\n  author: Author\n  votes: Int\n}type Query {\n  posts: [Post]\n  author(id: Int!): Author\n}\n"
       },
       "ICV_VIOLATIONS": {
         "value": "--myBoundary\nContent-Type: application/rdf+xml\n\n<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<rdf:RDF\n\txmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\">\n\n<rdf:Description rdf:about=\"urn:Employee\">\n\t<rdf:type rdf:resource=\"http://www.w3.org/2002/07/owl#Class\"/>\n</rdf:Description>\n\n<rdf:Description rdf:about=\"urn:Person\">\n\t<rdf:type rdf:resource=\"http://www.w3.org/2002/07/owl#Class\"/>\n</rdf:Description>\n\n<rdf:Description rdf:about=\"urn:Employee\">\n\t<subClassOf xmlns=\"http://www.w3.org/2000/01/rdf-schema#\" rdf:resource=\"urn:Person\"/>\n</rdf:Description>\n\n</rdf:RDF>\n\n--myBoundary\nContent-Type: application/sparql-results+xml\n\n<?xml version='1.0' encoding='UTF-8'?><sparql xmlns='http://www.w3.org/2005/sparql-results#'><head><variable name='x0'/></head><results><result><binding name='x0'><uri>urn:Employee1</uri></binding></result></results></sparql>"
@@ -8841,6 +9485,15 @@
             }
           }
         }
+      },
+      "GRAPHQL_SCHEMA": {
+        "content": {
+          "application/graphql": {
+            "example": {
+              "$ref": "#/components/examples/GRAPHQL_SCHEMA"
+            }
+          }
+        }
       }
     }
   },
@@ -8858,7 +9511,8 @@
         "Server Admin",
         "Server Status/Metrics",
         "Queries",
-        "Stored Functions"
+        "Stored Functions",
+        "Cluster Admin"
       ]
     },
     {
